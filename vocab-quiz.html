@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>English Vocab Quiz</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{min-height:100vh;background:linear-gradient(145deg,#0a0a1a,#1a1a3e 50%,#0d0d2b);font-family:'Segoe UI','Hiragino Sans','Hiragino Kaku Gothic ProN',sans-serif;color:#e8e8f0;overflow-x:hidden}
+@keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{transform:scale(.8);opacity:0}50%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.ob{transition:all .2s;cursor:pointer;border:2px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:14px;color:#e8e8f0;font-size:17px;font-weight:600;text-align:left;width:100%}
+.ob:hover:not(.ad){transform:translateY(-2px);border-color:rgba(100,200,255,.4);background:rgba(100,200,255,.08)!important}
+.ob.ad{cursor:default}
+.sb{cursor:pointer;transition:all .15s;background:none;border:none;font-size:inherit}
+.sb:hover{transform:scale(1.15)}.sb:active{transform:scale(.95)}
+.lc{cursor:pointer;transition:all .25s;display:flex;align-items:center;gap:16px;padding:18px 20px;border-radius:16px;background:rgba(255,255,255,.04);position:relative;overflow:hidden}
+.lc:hover{transform:translateY(-6px) scale(1.02)}
+.wrap{max-width:520px;margin:0 auto;padding:24px 20px 40px}
+button{font-family:inherit}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+
+const LEVELS = {
+  foundation: {
+    label: "基礎", emoji: "🔤", color: "#f472b6", desc: "中学英語の必須単語！会話の土台",
+    words: [
+      // ── 動詞 ──
+      { word: "explain", meaning: "説明する", phonetic: "/ɪkˈspleɪn/", example: "Can you explain this to me?", exampleJa: "これを私に説明してくれる？" },
+      { word: "agree", meaning: "同意する、賛成する", phonetic: "/əˈɡriː/", example: "I agree with you.", exampleJa: "あなたに賛成です。" },
+      { word: "refuse", meaning: "断る、拒否する", phonetic: "/rɪˈfjuːz/", example: "She refused to answer the question.", exampleJa: "彼女は質問に答えることを拒否した。" },
+      { word: "accept", meaning: "受け入れる", phonetic: "/əkˈsept/", example: "Please accept my apology.", exampleJa: "私の謝罪を受け入れてください。" },
+      { word: "promise", meaning: "約束する", phonetic: "/ˈprɑːmɪs/", example: "I promise I'll be on time.", exampleJa: "時間通りに行くと約束する。" },
+      { word: "decide", meaning: "決める、決心する", phonetic: "/dɪˈsaɪd/", example: "I can't decide what to eat.", exampleJa: "何を食べるか決められない。" },
+      { word: "prepare", meaning: "準備する", phonetic: "/prɪˈper/", example: "I need to prepare for the test.", exampleJa: "テストの準備をしなきゃ。" },
+      { word: "discover", meaning: "発見する", phonetic: "/dɪˈskʌvər/", example: "I discovered a great cafe near here.", exampleJa: "この近くに素敵なカフェを発見した。" },
+      { word: "share", meaning: "共有する、分け合う", phonetic: "/ʃer/", example: "Let's share this pizza.", exampleJa: "このピザを分け合おう。" },
+      { word: "protect", meaning: "守る、保護する", phonetic: "/prəˈtekt/", example: "We must protect the environment.", exampleJa: "環境を守らなければならない。" },
+      { word: "solve", meaning: "解決する", phonetic: "/sɑːlv/", example: "We need to solve this problem.", exampleJa: "この問題を解決する必要がある。" },
+      { word: "notice", meaning: "気づく", phonetic: "/ˈnoʊtɪs/", example: "Did you notice anything strange?", exampleJa: "何かおかしいことに気づいた？" },
+      { word: "trust", meaning: "信頼する", phonetic: "/trʌst/", example: "You can trust me.", exampleJa: "私を信頼していいよ。" },
+      { word: "succeed", meaning: "成功する", phonetic: "/səkˈsiːd/", example: "She succeeded in passing the exam.", exampleJa: "彼女は試験に合格することに成功した。" },
+      { word: "fail", meaning: "失敗する、落ちる", phonetic: "/feɪl/", example: "Don't be afraid to fail.", exampleJa: "失敗を恐れないで。" },
+      { word: "provide", meaning: "提供する", phonetic: "/prəˈvaɪd/", example: "The hotel provides free Wi-Fi.", exampleJa: "ホテルは無料Wi-Fiを提供している。" },
+      { word: "wonder", meaning: "〜かなと思う、不思議に思う", phonetic: "/ˈwʌndər/", example: "I wonder why he didn't come.", exampleJa: "なぜ彼が来なかったのかなと思う。" },
+      { word: "suggest", meaning: "提案する", phonetic: "/səˈdʒest/", example: "I suggest we leave early.", exampleJa: "早めに出発することを提案する。" },
+      // ── 名詞 ──
+      { word: "experience", meaning: "経験、体験", phonetic: "/ɪkˈspɪriəns/", example: "It was an amazing experience.", exampleJa: "素晴らしい体験だった。" },
+      { word: "difference", meaning: "違い、差", phonetic: "/ˈdɪfərəns/", example: "What's the difference between these two?", exampleJa: "この2つの違いは何？" },
+      { word: "reason", meaning: "理由", phonetic: "/ˈriːzn/", example: "What's the reason for the delay?", exampleJa: "遅れた理由は何？" },
+      { word: "mistake", meaning: "間違い、ミス", phonetic: "/mɪˈsteɪk/", example: "Everyone makes mistakes.", exampleJa: "誰でもミスをする。" },
+      { word: "purpose", meaning: "目的", phonetic: "/ˈpɜːrpəs/", example: "What's the purpose of this meeting?", exampleJa: "この会議の目的は何？" },
+      { word: "memory", meaning: "記憶、思い出", phonetic: "/ˈmeməri/", example: "I have many good memories of that trip.", exampleJa: "あの旅行にはたくさんの良い思い出がある。" },
+      { word: "choice", meaning: "選択、選択肢", phonetic: "/tʃɔɪs/", example: "You made the right choice.", exampleJa: "正しい選択をしたね。" },
+      { word: "effort", meaning: "努力", phonetic: "/ˈefərt/", example: "It takes a lot of effort to learn a language.", exampleJa: "言語を学ぶには多くの努力が要る。" },
+      { word: "opinion", meaning: "意見", phonetic: "/əˈpɪnjən/", example: "What's your opinion on this?", exampleJa: "これについてあなたの意見は？" },
+      { word: "conversation", meaning: "会話", phonetic: "/ˌkɑːnvərˈseɪʃən/", example: "We had a long conversation.", exampleJa: "長い会話をした。" },
+      { word: "direction", meaning: "方向、道順", phonetic: "/dɪˈrekʃən/", example: "Can you give me directions to the station?", exampleJa: "駅への道順を教えてくれますか？" },
+      { word: "courage", meaning: "勇気", phonetic: "/ˈkɜːrɪdʒ/", example: "It takes courage to speak up.", exampleJa: "声を上げるには勇気がいる。" },
+      { word: "knowledge", meaning: "知識", phonetic: "/ˈnɑːlɪdʒ/", example: "Knowledge is power.", exampleJa: "知識は力なり。" },
+      { word: "success", meaning: "成功", phonetic: "/səkˈses/", example: "Hard work is the key to success.", exampleJa: "努力が成功の鍵だ。" },
+      { word: "accident", meaning: "事故、偶然", phonetic: "/ˈæksɪdənt/", example: "There was a car accident on the highway.", exampleJa: "高速道路で車の事故があった。" },
+      { word: "patient", meaning: "忍耐強い、患者", phonetic: "/ˈpeɪʃənt/", example: "Please be patient — it takes time.", exampleJa: "辛抱してください、時間がかかります。" },
+      // ── 形容詞 ──
+      { word: "honest", meaning: "正直な", phonetic: "/ˈɑːnɪst/", example: "To be honest, I don't like it.", exampleJa: "正直に言うと、好きじゃない。" },
+      { word: "polite", meaning: "礼儀正しい", phonetic: "/pəˈlaɪt/", example: "He is always polite to everyone.", exampleJa: "彼はいつも誰にでも礼儀正しい。" },
+      { word: "rude", meaning: "失礼な、無礼な", phonetic: "/ruːd/", example: "It's rude to talk with your mouth full.", exampleJa: "口に物を入れて話すのは失礼だ。" },
+      { word: "lonely", meaning: "寂しい、孤独な", phonetic: "/ˈloʊnli/", example: "I felt lonely when I moved to a new city.", exampleJa: "新しい街に引っ越したとき寂しかった。" },
+      { word: "nervous", meaning: "緊張した、不安な", phonetic: "/ˈnɜːrvəs/", example: "I'm nervous about the presentation.", exampleJa: "プレゼンのことで緊張している。" },
+      { word: "proud", meaning: "誇りに思う", phonetic: "/praʊd/", example: "I'm proud of what you've done.", exampleJa: "あなたがやったことを誇りに思う。" },
+      { word: "comfortable", meaning: "快適な、心地よい", phonetic: "/ˈkʌmftərbl/", example: "This sofa is really comfortable.", exampleJa: "このソファは本当に心地よい。" },
+      { word: "disappointed", meaning: "がっかりした", phonetic: "/ˌdɪsəˈpɔɪntɪd/", example: "I was disappointed with the result.", exampleJa: "結果にがっかりした。" },
+      { word: "responsible", meaning: "責任がある", phonetic: "/rɪˈspɑːnsəbl/", example: "Who is responsible for this project?", exampleJa: "このプロジェクトの責任者は誰？" },
+      { word: "available", meaning: "利用できる、空いている", phonetic: "/əˈveɪləbl/", example: "Are you available tomorrow?", exampleJa: "明日空いてる？" },
+      { word: "convenient", meaning: "便利な、都合がいい", phonetic: "/kənˈviːniənt/", example: "Is Saturday convenient for you?", exampleJa: "土曜日は都合がいいですか？" },
+    ],
+  },
+  starter: {
+    label: "入門", emoji: "🐣", color: "#fbbf24", desc: "まずはここから！超基本の日常単語",
+    words: [
+      { word: "actually", meaning: "実は、実際には", phonetic: "/ˈæktʃuəli/", example: "Actually, I changed my mind.", exampleJa: "実は、気が変わったんだ。" },
+      { word: "already", meaning: "もう、すでに", phonetic: "/ɔːlˈredi/", example: "I already finished my homework.", exampleJa: "もう宿題は終わったよ。" },
+      { word: "enough", meaning: "十分な、十分に", phonetic: "/ɪˈnʌf/", example: "Is this enough food for everyone?", exampleJa: "これで全員分の食べ物は十分？" },
+      { word: "maybe", meaning: "たぶん、もしかしたら", phonetic: "/ˈmeɪbi/", example: "Maybe we should try a different way.", exampleJa: "たぶん別の方法を試した方がいいかも。" },
+      { word: "almost", meaning: "ほとんど、もう少しで", phonetic: "/ˈɔːlmoʊst/", example: "We're almost there!", exampleJa: "もうすぐ着くよ！" },
+      { word: "borrow", meaning: "借りる", phonetic: "/ˈbɑːroʊ/", example: "Can I borrow your pen?", exampleJa: "ペンを借りてもいい？" },
+      { word: "expect", meaning: "予想する、期待する", phonetic: "/ɪkˈspekt/", example: "I didn't expect to see you here!", exampleJa: "ここで会うとは思わなかった！" },
+      { word: "instead", meaning: "代わりに", phonetic: "/ɪnˈsted/", example: "Let's stay home instead.", exampleJa: "代わりに家にいよう。" },
+      { word: "realize", meaning: "気づく、理解する", phonetic: "/ˈriːəlaɪz/", example: "I just realized I forgot my wallet.", exampleJa: "財布を忘れたことに今気づいた。" },
+      { word: "suppose", meaning: "〜と思う、たぶん〜", phonetic: "/səˈpoʊz/", example: "I suppose you're right.", exampleJa: "たぶんあなたが正しいと思う。" },
+      { word: "recently", meaning: "最近", phonetic: "/ˈriːsntli/", example: "I recently started learning guitar.", exampleJa: "最近ギターを習い始めた。" },
+      { word: "whole", meaning: "全体の、丸ごとの", phonetic: "/hoʊl/", example: "I ate the whole pizza by myself.", exampleJa: "ピザを一人で丸ごと食べた。" },
+      { word: "prefer", meaning: "〜の方を好む", phonetic: "/prɪˈfɜːr/", example: "I prefer coffee to tea.", exampleJa: "紅茶よりコーヒーの方が好きだ。" },
+      { word: "afford", meaning: "〜する余裕がある", phonetic: "/əˈfɔːrd/", example: "I can't afford a new phone right now.", exampleJa: "今は新しいスマホを買う余裕がない。" },
+      { word: "whether", meaning: "〜かどうか", phonetic: "/ˈweðər/", example: "I'm not sure whether to go or not.", exampleJa: "行くかどうか迷っている。" },
+      { word: "quite", meaning: "かなり、なかなか", phonetic: "/kwaɪt/", example: "The movie was quite interesting.", exampleJa: "その映画はかなり面白かった。" },
+      { word: "seem", meaning: "〜のように見える", phonetic: "/siːm/", example: "You seem tired today.", exampleJa: "今日は疲れているように見えるね。" },
+      { word: "several", meaning: "いくつかの", phonetic: "/ˈsevrəl/", example: "I've been there several times.", exampleJa: "そこには何度か行ったことがある。" },
+      { word: "toward", meaning: "〜に向かって", phonetic: "/tɔːrd/", example: "She walked toward the door.", exampleJa: "彼女はドアに向かって歩いた。" },
+      { word: "either", meaning: "どちらか、〜もまた（否定）", phonetic: "/ˈiːðər/", example: "I don't like it either.", exampleJa: "私もそれは好きじゃない。" },
+      { word: "through", meaning: "〜を通って、〜を経て", phonetic: "/θruː/", example: "We walked through the park.", exampleJa: "公園を通り抜けて歩いた。" },
+      { word: "probably", meaning: "たぶん、おそらく", phonetic: "/ˈprɑːbəbli/", example: "It will probably rain tomorrow.", exampleJa: "明日はたぶん雨が降るだろう。" },
+      { word: "barely", meaning: "かろうじて、ほとんど〜ない", phonetic: "/ˈberli/", example: "I barely made it on time.", exampleJa: "かろうじて間に合った。" },
+      { word: "ought", meaning: "〜すべきである", phonetic: "/ɔːt/", example: "You ought to apologize.", exampleJa: "謝るべきだよ。" },
+      { word: "within", meaning: "〜以内に", phonetic: "/wɪˈðɪn/", example: "I'll be back within an hour.", exampleJa: "1時間以内に戻るよ。" },
+      { word: "unless", meaning: "〜でない限り", phonetic: "/ənˈles/", example: "I won't go unless you come too.", exampleJa: "あなたも来ない限り行かない。" },
+      { word: "rather", meaning: "むしろ、かなり", phonetic: "/ˈræðər/", example: "I'd rather stay home tonight.", exampleJa: "今夜はむしろ家にいたい。" },
+      { word: "although", meaning: "〜だけれども", phonetic: "/ɔːlˈðoʊ/", example: "Although it was cold, we went outside.", exampleJa: "寒かったけれど、外に出た。" },
+      { word: "perhaps", meaning: "ひょっとすると", phonetic: "/pərˈhæps/", example: "Perhaps we should ask someone.", exampleJa: "ひょっとすると誰かに聞いた方がいいかも。" },
+      { word: "besides", meaning: "〜の他に、その上", phonetic: "/bɪˈsaɪdz/", example: "Besides English, she speaks French.", exampleJa: "英語の他にフランス語も話す。" },
+      { word: "grab", meaning: "つかむ、さっと取る", phonetic: "/ɡræb/", example: "Let me grab a coffee before the meeting.", exampleJa: "会議の前にコーヒーをさっと取ってくる。" },
+      { word: "remind", meaning: "思い出させる", phonetic: "/rɪˈmaɪnd/", example: "Please remind me to call her later.", exampleJa: "後で彼女に電話するのを思い出させて。" },
+      { word: "apologize", meaning: "謝る", phonetic: "/əˈpɑːlədʒaɪz/", example: "I want to apologize for being late.", exampleJa: "遅れたことを謝りたい。" },
+      { word: "complain", meaning: "不満を言う、文句を言う", phonetic: "/kəmˈpleɪn/", example: "He always complains about the weather.", exampleJa: "彼はいつも天気の文句を言う。" },
+      { word: "avoid", meaning: "避ける", phonetic: "/əˈvɔɪd/", example: "I try to avoid eating too much sugar.", exampleJa: "砂糖の摂りすぎを避けるようにしている。" },
+      { word: "rush", meaning: "急ぐ、急いでやる", phonetic: "/rʌʃ/", example: "Don't rush — take your time.", exampleJa: "急がないで、ゆっくりやって。" },
+      { word: "struggle", meaning: "苦労する、もがく", phonetic: "/ˈstrʌɡl/", example: "I struggled with math in high school.", exampleJa: "高校で数学に苦労した。" },
+      { word: "annoy", meaning: "イライラさせる", phonetic: "/əˈnɔɪ/", example: "That noise really annoys me.", exampleJa: "あの音は本当にイライラする。" },
+      { word: "habit", meaning: "習慣、癖", phonetic: "/ˈhæbɪt/", example: "Reading before bed is a good habit.", exampleJa: "寝る前に読書するのは良い習慣だ。" },
+      { word: "mood", meaning: "気分、機嫌", phonetic: "/muːd/", example: "I'm not in the mood for a party.", exampleJa: "パーティーの気分じゃない。" },
+      { word: "schedule", meaning: "予定、スケジュール", phonetic: "/ˈskedʒuːl/", example: "My schedule is packed this week.", exampleJa: "今週は予定がぎっしりだ。" },
+      { word: "neighborhood", meaning: "近所、地域", phonetic: "/ˈneɪbərhʊd/", example: "This is a quiet neighborhood.", exampleJa: "ここは静かな地域だ。" },
+      { word: "situation", meaning: "状況、事態", phonetic: "/ˌsɪtʃuˈeɪʃən/", example: "It's a difficult situation for everyone.", exampleJa: "皆にとって難しい状況だ。" },
+      { word: "permission", meaning: "許可", phonetic: "/pərˈmɪʃən/", example: "You need permission to park here.", exampleJa: "ここに駐車するには許可が必要だ。" },
+    ],
+  },
+  beginner: {
+    label: "初級", emoji: "🌱", color: "#34d399", desc: "日常でよく使う基本単語",
+    words: [
+      { word: "improve", meaning: "改善する", phonetic: "/ɪmˈpruːv/", example: "I want to improve my English skills.", exampleJa: "英語力を改善したい。" },
+      { word: "achieve", meaning: "達成する", phonetic: "/əˈtʃiːv/", example: "She achieved her goal of running a marathon.", exampleJa: "彼女はマラソンを走る目標を達成した。" },
+      { word: "confident", meaning: "自信がある", phonetic: "/ˈkɑːnfɪdənt/", example: "He felt confident about the interview.", exampleJa: "彼は面接に自信を感じていた。" },
+      { word: "opportunity", meaning: "機会、チャンス", phonetic: "/ˌɑːpərˈtuːnəti/", example: "This is a great opportunity to learn.", exampleJa: "これは学ぶ絶好の機会だ。" },
+      { word: "challenge", meaning: "挑戦、課題", phonetic: "/ˈtʃælɪndʒ/", example: "Learning a new language is always a challenge.", exampleJa: "新しい言語を学ぶのは常に挑戦だ。" },
+      { word: "appreciate", meaning: "感謝する、理解する", phonetic: "/əˈpriːʃieɪt/", example: "I really appreciate your help.", exampleJa: "あなたの助けに本当に感謝しています。" },
+      { word: "recommend", meaning: "勧める、推薦する", phonetic: "/ˌrekəˈmend/", example: "Can you recommend a good restaurant?", exampleJa: "いいレストランを勧めてもらえますか？" },
+      { word: "familiar", meaning: "よく知っている、馴染みの", phonetic: "/fəˈmɪliər/", example: "This place looks familiar to me.", exampleJa: "この場所は見覚えがある。" },
+      { word: "essential", meaning: "不可欠な、必須の", phonetic: "/ɪˈsenʃəl/", example: "Water is essential for life.", exampleJa: "水は生命に不可欠だ。" },
+      { word: "gradually", meaning: "徐々に、少しずつ", phonetic: "/ˈɡrædʒuəli/", example: "Her English gradually improved over time.", exampleJa: "彼女の英語は時間とともに徐々に上達した。" },
+      { word: "curious", meaning: "好奇心旺盛な", phonetic: "/ˈkjʊriəs/", example: "Children are naturally curious about the world.", exampleJa: "子どもは生まれつき世界に好奇心旺盛だ。" },
+      { word: "participate", meaning: "参加する", phonetic: "/pɑːrˈtɪsɪpeɪt/", example: "Everyone should participate in the discussion.", exampleJa: "全員が議論に参加すべきだ。" },
+      { word: "obvious", meaning: "明らかな", phonetic: "/ˈɑːbviəs/", example: "The answer was obvious from the start.", exampleJa: "答えは最初から明らかだった。" },
+      { word: "atmosphere", meaning: "雰囲気、大気", phonetic: "/ˈætməsfɪr/", example: "The restaurant had a warm atmosphere.", exampleJa: "そのレストランは温かい雰囲気だった。" },
+      { word: "generous", meaning: "寛大な、気前のいい", phonetic: "/ˈdʒenərəs/", example: "She is very generous with her time.", exampleJa: "彼女は時間をとても惜しみなく使う。" },
+      { word: "encourage", meaning: "励ます、促す", phonetic: "/ɪnˈkɜːrɪdʒ/", example: "My teacher always encouraged me to try harder.", exampleJa: "先生はいつももっと頑張れと励ましてくれた。" },
+      { word: "compare", meaning: "比較する", phonetic: "/kəmˈper/", example: "Let's compare prices before buying.", exampleJa: "買う前に値段を比較しよう。" },
+      { word: "develop", meaning: "発達する、開発する", phonetic: "/dɪˈveləp/", example: "She developed a new skill over the summer.", exampleJa: "彼女は夏の間に新しいスキルを身につけた。" },
+      { word: "separate", meaning: "分ける、別々の", phonetic: "/ˈsepəreɪt/", example: "Please separate the white clothes from the colors.", exampleJa: "白い服と色物を分けてください。" },
+      { word: "concern", meaning: "心配、関心事", phonetic: "/kənˈsɜːrn/", example: "Safety is our main concern.", exampleJa: "安全が私たちの主な関心事だ。" },
+      { word: "mention", meaning: "言及する、触れる", phonetic: "/ˈmenʃən/", example: "Did I mention that I'm leaving early?", exampleJa: "早く帰ることを言ったっけ？" },
+      { word: "determine", meaning: "決定する、見極める", phonetic: "/dɪˈtɜːrmɪn/", example: "We need to determine the cause of the problem.", exampleJa: "問題の原因を見極める必要がある。" },
+      { word: "require", meaning: "必要とする、要求する", phonetic: "/rɪˈkwaɪər/", example: "This job requires a lot of patience.", exampleJa: "この仕事には多くの忍耐が必要だ。" },
+      { word: "eventually", meaning: "最終的に、ついに", phonetic: "/ɪˈventʃuəli/", example: "He eventually found a job he loved.", exampleJa: "彼はついに大好きな仕事を見つけた。" },
+      { word: "consider", meaning: "考慮する、検討する", phonetic: "/kənˈsɪdər/", example: "Have you considered studying abroad?", exampleJa: "留学を検討したことはある？" },
+      { word: "involve", meaning: "関わる、含む", phonetic: "/ɪnˈvɑːlv/", example: "The project involves a lot of teamwork.", exampleJa: "そのプロジェクトには多くのチームワークが関わる。" },
+      { word: "recognize", meaning: "認識する、見分ける", phonetic: "/ˈrekəɡnaɪz/", example: "I didn't recognize you with your new haircut!", exampleJa: "新しい髪型で誰か分からなかった！" },
+      { word: "suffer", meaning: "苦しむ、被る", phonetic: "/ˈsʌfər/", example: "Many people suffer from allergies in spring.", exampleJa: "春にはアレルギーに苦しむ人が多い。" },
+      { word: "influence", meaning: "影響、影響を与える", phonetic: "/ˈɪnfluəns/", example: "Music has a big influence on my mood.", exampleJa: "音楽は気分に大きな影響を与える。" },
+      { word: "advantage", meaning: "利点、有利な点", phonetic: "/ədˈvæntɪdʒ/", example: "Living near the station is a big advantage.", exampleJa: "駅の近くに住んでいるのは大きな利点だ。" },
+      { word: "prevent", meaning: "防ぐ、予防する", phonetic: "/prɪˈvent/", example: "We need to prevent this from happening again.", exampleJa: "これが再び起こるのを防ぐ必要がある。" },
+      { word: "allow", meaning: "許可する、可能にする", phonetic: "/əˈlaʊ/", example: "The app allows you to track your spending.", exampleJa: "そのアプリで支出を追跡できる。" },
+      { word: "arrange", meaning: "手配する、整える", phonetic: "/əˈreɪndʒ/", example: "I'll arrange a meeting for next week.", exampleJa: "来週の会議を手配するよ。" },
+      { word: "deliver", meaning: "届ける、配達する", phonetic: "/dɪˈlɪvər/", example: "They deliver food to your door.", exampleJa: "彼らはドアまで食べ物を届けてくれる。" },
+      { word: "examine", meaning: "調べる、検査する", phonetic: "/ɪɡˈzæmɪn/", example: "The doctor examined his knee carefully.", exampleJa: "医者は彼の膝を丁寧に調べた。" },
+      { word: "reveal", meaning: "明らかにする、暴露する", phonetic: "/rɪˈviːl/", example: "The report revealed some surprising facts.", exampleJa: "その報告書は驚くべき事実を明らかにした。" },
+      { word: "establish", meaning: "設立する、確立する", phonetic: "/ɪˈstæblɪʃ/", example: "The company was established in 2005.", exampleJa: "その会社は2005年に設立された。" },
+      { word: "trend", meaning: "傾向、流行", phonetic: "/trend/", example: "There's a growing trend toward remote work.", exampleJa: "リモートワークへの傾向が高まっている。" },
+      { word: "outcome", meaning: "結果、成果", phonetic: "/ˈaʊtkʌm/", example: "We're waiting for the outcome of the vote.", exampleJa: "投票の結果を待っている。" },
+      { word: "approach", meaning: "方法、アプローチ", phonetic: "/əˈproʊtʃ/", example: "Let's try a different approach.", exampleJa: "別のアプローチを試そう。" },
+      { word: "resource", meaning: "資源、リソース", phonetic: "/ˈriːsɔːrs/", example: "We don't have enough resources for this project.", exampleJa: "このプロジェクトにはリソースが足りない。" },
+      { word: "evidence", meaning: "証拠、根拠", phonetic: "/ˈevɪdəns/", example: "There's no evidence to support that claim.", exampleJa: "その主張を裏付ける証拠はない。" },
+      { word: "strategy", meaning: "戦略", phonetic: "/ˈstrætədʒi/", example: "We need a better strategy for growth.", exampleJa: "成長のためにより良い戦略が必要だ。" },
+      { word: "perspective", meaning: "視点、見方", phonetic: "/pərˈspektɪv/", example: "Try to see it from her perspective.", exampleJa: "彼女の視点から見てみて。" },
+    ],
+  },
+  intermediate: {
+    label: "中級", emoji: "📘", color: "#60a5fa", desc: "一歩進んだ表現力をつける",
+    words: [
+      { word: "eloquent", meaning: "雄弁な、表現力豊かな", phonetic: "/ˈeləkwənt/", example: "His eloquent speech moved the entire audience to tears.", exampleJa: "彼の雄弁なスピーチは聴衆全体を涙させた。" },
+      { word: "pragmatic", meaning: "実用的な、現実的な", phonetic: "/præɡˈmætɪk/", example: "We need a pragmatic approach to solve this problem.", exampleJa: "この問題を解決するには現実的なアプローチが必要だ。" },
+      { word: "resilient", meaning: "回復力のある", phonetic: "/rɪˈzɪliənt/", example: "She proved to be incredibly resilient after the setback.", exampleJa: "彼女は挫折の後、驚くほどの回復力を見せた。" },
+      { word: "ambiguous", meaning: "あいまいな、多義的な", phonetic: "/æmˈbɪɡjuəs/", example: "The contract language was deliberately ambiguous.", exampleJa: "契約の文言は意図的にあいまいだった。" },
+      { word: "meticulous", meaning: "細部まで注意深い", phonetic: "/məˈtɪkjələs/", example: "Her meticulous attention to detail impressed the client.", exampleJa: "彼女の細部への注意深さがクライアントを感心させた。" },
+      { word: "versatile", meaning: "多才な、多用途の", phonetic: "/ˈvɜːrsətaɪl/", example: "Python is a versatile programming language.", exampleJa: "Pythonは多用途なプログラミング言語だ。" },
+      { word: "nuance", meaning: "ニュアンス、微妙な違い", phonetic: "/ˈnuːɑːns/", example: "Understanding cultural nuance is key to good communication.", exampleJa: "文化的なニュアンスを理解することが良いコミュニケーションの鍵だ。" },
+      { word: "compelling", meaning: "説得力のある", phonetic: "/kəmˈpelɪŋ/", example: "She made a compelling argument for the new strategy.", exampleJa: "彼女は新戦略について説得力のある議論をした。" },
+      { word: "candid", meaning: "率直な、正直な", phonetic: "/ˈkændɪd/", example: "I appreciate your candid feedback on my presentation.", exampleJa: "プレゼンへの率直なフィードバックに感謝します。" },
+      { word: "tenacious", meaning: "粘り強い", phonetic: "/tɪˈneɪʃəs/", example: "A tenacious negotiator never gives up easily.", exampleJa: "粘り強い交渉者は簡単にあきらめない。" },
+      { word: "contemplate", meaning: "じっくり考える、熟考する", phonetic: "/ˈkɑːntəmpleɪt/", example: "She sat quietly to contemplate her next move.", exampleJa: "彼女は次の一手を熟考するため静かに座った。" },
+      { word: "inevitable", meaning: "避けられない", phonetic: "/ɪnˈevɪtəbl/", example: "Change is inevitable in any industry.", exampleJa: "どの業界でも変化は避けられない。" },
+      { word: "elaborate", meaning: "詳細な、精巧な", phonetic: "/ɪˈlæbərət/", example: "Could you elaborate on your proposal?", exampleJa: "提案についてもう少し詳しく説明してもらえますか？" },
+      { word: "profound", meaning: "深遠な、心からの", phonetic: "/prəˈfaʊnd/", example: "The book had a profound impact on my thinking.", exampleJa: "その本は私の思考に深い影響を与えた。" },
+      { word: "coherent", meaning: "首尾一貫した", phonetic: "/koʊˈhɪrənt/", example: "Make sure your argument is coherent and logical.", exampleJa: "議論が首尾一貫して論理的であることを確認してください。" },
+      { word: "arbitrary", meaning: "恣意的な、任意の", phonetic: "/ˈɑːrbɪtreri/", example: "The decision felt completely arbitrary.", exampleJa: "その決定は完全に恣意的に感じられた。" },
+      { word: "deteriorate", meaning: "悪化する", phonetic: "/dɪˈtɪriəreɪt/", example: "His health began to deteriorate rapidly.", exampleJa: "彼の健康状態は急速に悪化し始めた。" },
+      { word: "concise", meaning: "簡潔な", phonetic: "/kənˈsaɪs/", example: "Please keep your report concise.", exampleJa: "レポートは簡潔にしてください。" },
+      { word: "acknowledge", meaning: "認める、認知する", phonetic: "/əkˈnɑːlɪdʒ/", example: "He refused to acknowledge his mistake.", exampleJa: "彼は自分のミスを認めようとしなかった。" },
+      { word: "perceive", meaning: "知覚する、認識する", phonetic: "/pərˈsiːv/", example: "People perceive risk differently.", exampleJa: "人はリスクの感じ方がそれぞれ違う。" },
+      { word: "compatible", meaning: "互換性のある、相性がいい", phonetic: "/kəmˈpætəbl/", example: "Make sure the software is compatible with your system.", exampleJa: "ソフトウェアがシステムと互換性があるか確認して。" },
+      { word: "diminish", meaning: "減少する、弱まる", phonetic: "/dɪˈmɪnɪʃ/", example: "The noise gradually diminished.", exampleJa: "騒音は徐々に小さくなった。" },
+      { word: "skeptical", meaning: "懐疑的な", phonetic: "/ˈskeptɪkəl/", example: "I'm skeptical about his explanation.", exampleJa: "彼の説明には懐疑的だ。" },
+      { word: "advocate", meaning: "提唱する、擁護者", phonetic: "/ˈædvəkeɪt/", example: "She advocates for equal rights.", exampleJa: "彼女は平等な権利を提唱している。" },
+      { word: "consolidate", meaning: "統合する、強固にする", phonetic: "/kənˈsɑːlɪdeɪt/", example: "The company consolidated its operations.", exampleJa: "会社は事業を統合した。" },
+      { word: "fluctuate", meaning: "変動する", phonetic: "/ˈflʌktʃueɪt/", example: "Prices fluctuate depending on demand.", exampleJa: "価格は需要に応じて変動する。" },
+      { word: "predominant", meaning: "支配的な、主要な", phonetic: "/prɪˈdɑːmɪnənt/", example: "English is the predominant language in business.", exampleJa: "ビジネスでは英語が主要な言語だ。" },
+      { word: "replicate", meaning: "再現する、複製する", phonetic: "/ˈreplɪkeɪt/", example: "Scientists failed to replicate the results.", exampleJa: "科学者たちはその結果を再現できなかった。" },
+      { word: "speculate", meaning: "推測する、投機する", phonetic: "/ˈspekjəleɪt/", example: "It's too early to speculate on the outcome.", exampleJa: "結果を推測するにはまだ早い。" },
+      { word: "supplement", meaning: "補う、補足する", phonetic: "/ˈsʌplɪment/", example: "She supplements her income with freelance work.", exampleJa: "彼女はフリーランスの仕事で収入を補っている。" },
+      { word: "undermine", meaning: "密かに損なう、弱体化させる", phonetic: "/ˌʌndərˈmaɪn/", example: "Gossip can undermine trust within a team.", exampleJa: "噂話はチーム内の信頼を密かに損なう。" },
+      { word: "allocate", meaning: "割り当てる、配分する", phonetic: "/ˈæləkeɪt/", example: "We need to allocate more budget to marketing.", exampleJa: "マーケティングにもっと予算を割り当てる必要がある。" },
+      { word: "implement", meaning: "実行する、導入する", phonetic: "/ˈɪmplɪment/", example: "We plan to implement the new system next month.", exampleJa: "来月新しいシステムを導入する予定だ。" },
+      { word: "trigger", meaning: "引き起こす、きっかけ", phonetic: "/ˈtrɪɡər/", example: "The news triggered a wave of panic selling.", exampleJa: "そのニュースがパニック売りの波を引き起こした。" },
+      { word: "accumulate", meaning: "蓄積する、たまる", phonetic: "/əˈkjuːmjəleɪt/", example: "Dust tends to accumulate on bookshelves.", exampleJa: "本棚にはほこりがたまりやすい。" },
+      { word: "contradict", meaning: "矛盾する、反論する", phonetic: "/ˌkɑːntrəˈdɪkt/", example: "His actions contradict his words.", exampleJa: "彼の行動は言葉と矛盾している。" },
+      { word: "oversight", meaning: "見落とし、監督", phonetic: "/ˈoʊvərsaɪt/", example: "The error was due to a simple oversight.", exampleJa: "そのミスは単純な見落としによるものだった。" },
+      { word: "consensus", meaning: "合意、総意", phonetic: "/kənˈsensəs/", example: "The team reached a consensus after a long discussion.", exampleJa: "チームは長い議論の末に合意に達した。" },
+      { word: "framework", meaning: "枠組み、フレームワーク", phonetic: "/ˈfreɪmwɜːrk/", example: "We built a framework for evaluating proposals.", exampleJa: "提案を評価するための枠組みを作った。" },
+      { word: "constraint", meaning: "制約、制限", phonetic: "/kənˈstreɪnt/", example: "Budget constraints forced us to cut features.", exampleJa: "予算の制約で機能を削らざるを得なかった。" },
+      { word: "discrepancy", meaning: "食い違い、不一致", phonetic: "/dɪˈskrepənsi/", example: "There's a discrepancy between the two reports.", exampleJa: "2つの報告書の間に食い違いがある。" },
+      { word: "threshold", meaning: "しきい値、境界", phonetic: "/ˈθreʃhoʊld/", example: "Sales crossed the one million threshold.", exampleJa: "売上が100万のしきい値を超えた。" },
+      { word: "setback", meaning: "挫折、後退", phonetic: "/ˈsetbæk/", example: "The delay was a major setback for the project.", exampleJa: "その遅延はプロジェクトにとって大きな挫折だった。" },
+      { word: "rationale", meaning: "根拠、理論的根拠", phonetic: "/ˌræʃəˈnæl/", example: "What's the rationale behind this decision?", exampleJa: "この決定の根拠は何ですか？" },
+    ],
+  },
+  advanced: {
+    label: "上級", emoji: "🔥", color: "#f97316", desc: "ネイティブに近い語彙力を",
+    words: [
+      { word: "ubiquitous", meaning: "どこにでもある", phonetic: "/juːˈbɪkwɪtəs/", example: "Smartphones have become ubiquitous in modern life.", exampleJa: "スマートフォンは現代生活でどこにでも見られるようになった。" },
+      { word: "serendipity", meaning: "思いがけない幸運", phonetic: "/ˌserənˈdɪpəti/", example: "Finding that book was pure serendipity.", exampleJa: "あの本を見つけたのは全くの偶然の幸運だった。" },
+      { word: "ephemeral", meaning: "はかない、一時的な", phonetic: "/ɪˈfemərəl/", example: "Social media stories are ephemeral by design.", exampleJa: "SNSのストーリーは設計上はかないものだ。" },
+      { word: "audacious", meaning: "大胆な、向こう見ずな", phonetic: "/ɔːˈdeɪʃəs/", example: "The startup had an audacious plan to disrupt the industry.", exampleJa: "そのスタートアップは業界を覆す大胆な計画を持っていた。" },
+      { word: "scrutinize", meaning: "精査する", phonetic: "/ˈskruːtənaɪz/", example: "Investors will scrutinize every detail of your business plan.", exampleJa: "投資家はビジネスプランのあらゆる細部を精査する。" },
+      { word: "substantiate", meaning: "実証する、裏付ける", phonetic: "/səbˈstænʃieɪt/", example: "You need data to substantiate your claims.", exampleJa: "主張を裏付けるにはデータが必要だ。" },
+      { word: "juxtapose", meaning: "並置する、対比する", phonetic: "/ˌdʒʌkstəˈpoʊz/", example: "The artist juxtaposed light and shadow to create drama.", exampleJa: "その芸術家は光と影を並置してドラマを生み出した。" },
+      { word: "surreptitious", meaning: "こそこそした、秘密の", phonetic: "/ˌsɜːrəpˈtɪʃəs/", example: "He took a surreptitious glance at the confidential file.", exampleJa: "彼はこっそりと機密ファイルをちらりと見た。" },
+      { word: "ameliorate", meaning: "改善する、良くする", phonetic: "/əˈmiːliəreɪt/", example: "New policies were introduced to ameliorate working conditions.", exampleJa: "労働条件を改善するために新しい政策が導入された。" },
+      { word: "perfunctory", meaning: "おざなりな、形式的な", phonetic: "/pərˈfʌŋktəri/", example: "He gave a perfunctory nod and walked away.", exampleJa: "彼はおざなりにうなずいて立ち去った。" },
+      { word: "recalcitrant", meaning: "反抗的な、扱いにくい", phonetic: "/rɪˈkælsɪtrənt/", example: "The recalcitrant employee refused to follow the new rules.", exampleJa: "その反抗的な従業員は新しいルールに従うことを拒んだ。" },
+      { word: "vicarious", meaning: "代理の、追体験の", phonetic: "/vaɪˈkeriəs/", example: "She got vicarious pleasure from her friend's travel stories.", exampleJa: "彼女は友人の旅行話から追体験の喜びを得た。" },
+      { word: "languid", meaning: "けだるい、活気のない", phonetic: "/ˈlæŋɡwɪd/", example: "The languid summer afternoon made everyone sleepy.", exampleJa: "けだるい夏の午後は皆を眠くさせた。" },
+      { word: "pernicious", meaning: "有害な、悪質な", phonetic: "/pərˈnɪʃəs/", example: "Misinformation can have a pernicious effect on society.", exampleJa: "誤情報は社会に有害な影響を与えうる。" },
+      { word: "propensity", meaning: "傾向、性癖", phonetic: "/prəˈpensəti/", example: "He has a propensity for taking unnecessary risks.", exampleJa: "彼は不必要なリスクを取る傾向がある。" },
+      { word: "obfuscate", meaning: "曖昧にする、混乱させる", phonetic: "/ˈɑːbfəskeɪt/", example: "Politicians often obfuscate the truth.", exampleJa: "政治家はしばしば真実を曖昧にする。" },
+      { word: "taciturn", meaning: "無口な、寡黙な", phonetic: "/ˈtæsɪtɜːrn/", example: "He was a taciturn man who rarely spoke at meetings.", exampleJa: "彼は会議でめったに発言しない寡黙な人だった。" },
+      { word: "equivocal", meaning: "あいまいな、はっきりしない", phonetic: "/ɪˈkwɪvəkəl/", example: "The test results were equivocal.", exampleJa: "検査結果はあいまいだった。" },
+      { word: "capricious", meaning: "気まぐれな", phonetic: "/kəˈprɪʃəs/", example: "The capricious weather ruined our plans.", exampleJa: "気まぐれな天気が計画を台無しにした。" },
+      { word: "exacerbate", meaning: "悪化させる", phonetic: "/ɪɡˈzæsərbeɪt/", example: "Lack of sleep can exacerbate stress.", exampleJa: "睡眠不足はストレスを悪化させる。" },
+      { word: "inexorable", meaning: "容赦ない、止められない", phonetic: "/ɪnˈeksərəbl/", example: "The inexorable march of technology continues.", exampleJa: "テクノロジーの容赦ない進歩は続く。" },
+      { word: "fastidious", meaning: "気難しい、潔癖な", phonetic: "/fæˈstɪdiəs/", example: "She is fastidious about cleanliness.", exampleJa: "彼女は清潔さに関してとても潔癖だ。" },
+      { word: "lucid", meaning: "明晰な、わかりやすい", phonetic: "/ˈluːsɪd/", example: "Her explanation was remarkably lucid.", exampleJa: "彼女の説明は驚くほど明晰だった。" },
+      { word: "disparate", meaning: "異質な、全く異なる", phonetic: "/ˈdɪspərət/", example: "They managed to unite disparate groups.", exampleJa: "彼らは異質なグループを団結させた。" },
+      { word: "esoteric", meaning: "難解な、少数の人向けの", phonetic: "/ˌesəˈterɪk/", example: "The lecture covered esoteric topics in philosophy.", exampleJa: "その講義は哲学の難解なテーマを扱った。" },
+      { word: "belligerent", meaning: "好戦的な、けんか腰の", phonetic: "/bəˈlɪdʒərənt/", example: "His belligerent tone made negotiation difficult.", exampleJa: "彼のけんか腰の口調が交渉を難しくした。" },
+      { word: "loquacious", meaning: "おしゃべりな", phonetic: "/loʊˈkweɪʃəs/", example: "My loquacious uncle can talk for hours.", exampleJa: "おしゃべりな叔父は何時間でも話せる。" },
+      { word: "acquiesce", meaning: "しぶしぶ同意する", phonetic: "/ˌækwiˈes/", example: "She eventually acquiesced to the demand.", exampleJa: "彼女は最終的にその要求にしぶしぶ同意した。" },
+      { word: "insidious", meaning: "陰険な、知らぬ間に進行する", phonetic: "/ɪnˈsɪdiəs/", example: "Burnout is insidious because it creeps up on you.", exampleJa: "燃え尽き症候群は知らぬ間に忍び寄るから陰険だ。" },
+      { word: "magnanimous", meaning: "寛大な、度量の大きい", phonetic: "/mæɡˈnænɪməs/", example: "It was magnanimous of her to forgive him.", exampleJa: "彼を許すとは彼女は寛大だった。" },
+      { word: "corroborate", meaning: "裏付ける、確証する", phonetic: "/kəˈrɑːbəreɪt/", example: "Witnesses corroborated his version of events.", exampleJa: "目撃者が彼の証言を裏付けた。" },
+      { word: "supplant", meaning: "取って代わる", phonetic: "/səˈplænt/", example: "Streaming has supplanted traditional TV.", exampleJa: "ストリーミングが従来のテレビに取って代わった。" },
+      { word: "extrapolate", meaning: "推定する、推測する", phonetic: "/ɪkˈstræpəleɪt/", example: "We can extrapolate future trends from this data.", exampleJa: "このデータから将来の傾向を推定できる。" },
+      { word: "coalesce", meaning: "合体する、融合する", phonetic: "/ˌkoʊəˈles/", example: "Several small groups coalesced into one movement.", exampleJa: "いくつかの小グループが一つの運動に融合した。" },
+      { word: "preclude", meaning: "排除する、不可能にする", phonetic: "/prɪˈkluːd/", example: "The injury precluded him from competing.", exampleJa: "その怪我で彼は出場できなくなった。" },
+      { word: "galvanize", meaning: "奮い立たせる、刺激する", phonetic: "/ˈɡælvənaɪz/", example: "The speech galvanized the crowd into action.", exampleJa: "そのスピーチが群衆を奮い立たせて行動に駆り立てた。" },
+      { word: "paradigm", meaning: "パラダイム、模範", phonetic: "/ˈpærədaɪm/", example: "AI represents a paradigm shift in technology.", exampleJa: "AIはテクノロジーにおけるパラダイムシフトだ。" },
+      { word: "dichotomy", meaning: "二分法、対立", phonetic: "/daɪˈkɑːtəmi/", example: "There's a false dichotomy between art and science.", exampleJa: "芸術と科学の間には誤った二分法がある。" },
+      { word: "conundrum", meaning: "難問、ジレンマ", phonetic: "/kəˈnʌndrəm/", example: "Climate change presents a global conundrum.", exampleJa: "気候変動は世界的な難問を突きつけている。" },
+      { word: "catalyst", meaning: "触媒、きっかけ", phonetic: "/ˈkætəlɪst/", example: "The pandemic was a catalyst for digital transformation.", exampleJa: "パンデミックはデジタル変革のきっかけとなった。" },
+      { word: "ramification", meaning: "影響、結果", phonetic: "/ˌræmɪfɪˈkeɪʃən/", example: "We must consider the ramifications of this policy.", exampleJa: "この政策の影響を考慮しなければならない。" },
+      { word: "trajectory", meaning: "軌道、経路", phonetic: "/trəˈdʒektəri/", example: "The company's growth trajectory is impressive.", exampleJa: "その会社の成長軌道は印象的だ。" },
+      { word: "precedent", meaning: "前例", phonetic: "/ˈpresɪdənt/", example: "This ruling sets a dangerous precedent.", exampleJa: "この判決は危険な前例を作る。" },
+      { word: "anomaly", meaning: "異常、例外", phonetic: "/əˈnɑːməli/", example: "The warm winter was a weather anomaly.", exampleJa: "暖冬は天候の異常だった。" },
+    ],
+  },
+  business: {
+    label: "ビジネス", emoji: "💼", color: "#a78bfa", desc: "仕事で差がつく実践表現",
+    words: [
+      { word: "leverage", meaning: "活用する、てこ入れ", phonetic: "/ˈlevərɪdʒ/", example: "We should leverage our existing network to grow faster.", exampleJa: "既存のネットワークを活用してより速く成長すべきだ。" },
+      { word: "pivotal", meaning: "極めて重要な", phonetic: "/ˈpɪvətl/", example: "That meeting was a pivotal moment in the company's history.", exampleJa: "あの会議は会社の歴史における極めて重要な瞬間だった。" },
+      { word: "mitigate", meaning: "軽減する、和らげる", phonetic: "/ˈmɪtɪɡeɪt/", example: "We must mitigate the risks before launching the product.", exampleJa: "製品を発売する前にリスクを軽減しなければならない。" },
+      { word: "inception", meaning: "開始、発端", phonetic: "/ɪnˈsepʃən/", example: "The project has evolved greatly since its inception.", exampleJa: "プロジェクトは発足以来、大きく進化してきた。" },
+      { word: "scalable", meaning: "拡張可能な", phonetic: "/ˈskeɪləbl/", example: "We need a scalable solution that grows with our user base.", exampleJa: "ユーザーベースとともに成長する拡張可能なソリューションが必要だ。" },
+      { word: "streamline", meaning: "効率化する", phonetic: "/ˈstriːmlaɪn/", example: "The new software will streamline our workflow.", exampleJa: "新しいソフトウェアはワークフローを効率化する。" },
+      { word: "benchmark", meaning: "基準、指標", phonetic: "/ˈbentʃmɑːrk/", example: "Our competitors set the benchmark for customer service.", exampleJa: "競合他社が顧客サービスの基準を定めている。" },
+      { word: "stakeholder", meaning: "利害関係者", phonetic: "/ˈsteɪkhoʊldər/", example: "All stakeholders must approve the proposal.", exampleJa: "全ての利害関係者が提案を承認する必要がある。" },
+      { word: "synergy", meaning: "相乗効果", phonetic: "/ˈsɪnərdʒi/", example: "The merger created powerful synergy between the two teams.", exampleJa: "合併は両チーム間に強力な相乗効果を生み出した。" },
+      { word: "robust", meaning: "堅牢な、力強い", phonetic: "/roʊˈbʌst/", example: "We built a robust system that handles peak traffic.", exampleJa: "ピーク時のトラフィックに耐える堅牢なシステムを構築した。" },
+      { word: "iterate", meaning: "繰り返す、反復する", phonetic: "/ˈɪtəreɪt/", example: "We need to iterate on the design based on user feedback.", exampleJa: "ユーザーフィードバックに基づいてデザインを反復する必要がある。" },
+      { word: "onboard", meaning: "導入する、受け入れる", phonetic: "/ˈɑːnbɔːrd/", example: "It takes two weeks to fully onboard a new employee.", exampleJa: "新しい従業員を完全に受け入れるのに2週間かかる。" },
+      { word: "align", meaning: "一致させる、整合する", phonetic: "/əˈlaɪn/", example: "We need to align our goals with the company's vision.", exampleJa: "会社のビジョンと目標を一致させる必要がある。" },
+      { word: "bandwidth", meaning: "余力、処理能力", phonetic: "/ˈbændwɪdθ/", example: "I don't have the bandwidth to take on another project.", exampleJa: "もう一つのプロジェクトを引き受ける余力がない。" },
+      { word: "deliverable", meaning: "成果物、納品物", phonetic: "/dɪˈlɪvərəbl/", example: "The final deliverable is due by end of the quarter.", exampleJa: "最終成果物は四半期末が期限だ。" },
+      { word: "incentivize", meaning: "動機付ける", phonetic: "/ɪnˈsentɪvaɪz/", example: "We need to incentivize early adoption.", exampleJa: "早期導入を動機付ける必要がある。" },
+      { word: "proactive", meaning: "先を見越した、積極的な", phonetic: "/proʊˈæktɪv/", example: "Be proactive about identifying potential issues.", exampleJa: "潜在的な問題の特定に先を見越して取り組もう。" },
+      { word: "optimize", meaning: "最適化する", phonetic: "/ˈɑːptɪmaɪz/", example: "We're working to optimize the checkout process.", exampleJa: "チェックアウトプロセスの最適化に取り組んでいる。" },
+      { word: "retention", meaning: "維持、保持", phonetic: "/rɪˈtenʃən/", example: "Customer retention is cheaper than acquisition.", exampleJa: "顧客維持は新規獲得より安上がりだ。" },
+      { word: "pipeline", meaning: "パイプライン、案件の流れ", phonetic: "/ˈpaɪplaɪn/", example: "We have several deals in the pipeline.", exampleJa: "パイプラインにいくつかの案件がある。" },
+      { word: "traction", meaning: "牽引力、勢い", phonetic: "/ˈtrækʃən/", example: "The product is gaining traction in the market.", exampleJa: "その製品は市場で勢いを増している。" },
+      { word: "bottleneck", meaning: "ボトルネック、障害", phonetic: "/ˈbɑːtlnek/", example: "The approval process is a bottleneck.", exampleJa: "承認プロセスがボトルネックだ。" },
+      { word: "due diligence", meaning: "デューデリジェンス、精査", phonetic: "/duː ˈdɪlɪdʒəns/", example: "We completed due diligence before the acquisition.", exampleJa: "買収前にデューデリジェンスを完了した。" },
+      { word: "monetize", meaning: "収益化する", phonetic: "/ˈmɑːnɪtaɪz/", example: "How do you plan to monetize this platform?", exampleJa: "このプラットフォームをどう収益化する予定？" },
+      { word: "disrupt", meaning: "破壊的変革を起こす", phonetic: "/dɪsˈrʌpt/", example: "Their goal is to disrupt the traditional banking model.", exampleJa: "彼らの目標は従来の銀行モデルに破壊的変革を起こすことだ。" },
+      { word: "granular", meaning: "粒度の細かい、詳細な", phonetic: "/ˈɡrænjələr/", example: "We need more granular data to make this decision.", exampleJa: "この決定にはもっと詳細なデータが必要だ。" },
+      { word: "expedite", meaning: "促進する、迅速化する", phonetic: "/ˈekspədaɪt/", example: "Can we expedite the shipping process?", exampleJa: "出荷プロセスを迅速化できますか？" },
+      { word: "feasible", meaning: "実現可能な", phonetic: "/ˈfiːzəbl/", example: "Is it feasible to launch by March?", exampleJa: "3月までにローンチするのは実現可能？" },
+      { word: "rapport", meaning: "信頼関係", phonetic: "/ræˈpɔːr/", example: "Building rapport with clients is essential.", exampleJa: "クライアントとの信頼関係を築くことが不可欠だ。" },
+      { word: "contingency", meaning: "不測の事態、代替案", phonetic: "/kənˈtɪndʒənsi/", example: "We always prepare a contingency plan.", exampleJa: "不測の事態に備えた代替案を常に準備している。" },
+      { word: "delegate", meaning: "委任する、委譲する", phonetic: "/ˈdelɪɡeɪt/", example: "Learn to delegate tasks to your team.", exampleJa: "チームにタスクを委任することを覚えよう。" },
+      { word: "negotiate", meaning: "交渉する", phonetic: "/nɪˈɡoʊʃieɪt/", example: "We managed to negotiate a better deal.", exampleJa: "より良い条件を交渉できた。" },
+      { word: "outsource", meaning: "外部委託する", phonetic: "/ˈaʊtsɔːrs/", example: "They decided to outsource customer support.", exampleJa: "カスタマーサポートを外部委託することにした。" },
+      { word: "forecast", meaning: "予測する、予測", phonetic: "/ˈfɔːrkæst/", example: "The sales forecast looks promising.", exampleJa: "売上予測は有望に見える。" },
+      { word: "prioritize", meaning: "優先順位をつける", phonetic: "/praɪˈɔːrɪtaɪz/", example: "We need to prioritize the most urgent tasks.", exampleJa: "最も緊急のタスクに優先順位をつける必要がある。" },
+      { word: "consolidate", meaning: "統合する、強固にする", phonetic: "/kənˈsɑːlɪdeɪt/", example: "The company consolidated its regional offices.", exampleJa: "会社は地方オフィスを統合した。" },
+      { word: "comply", meaning: "従う、準拠する", phonetic: "/kəmˈplaɪ/", example: "All vendors must comply with our guidelines.", exampleJa: "全ベンダーがガイドラインに準拠する必要がある。" },
+      { word: "revenue", meaning: "収益、売上", phonetic: "/ˈrevənuː/", example: "Revenue increased by 20% this quarter.", exampleJa: "今四半期、収益が20%増加した。" },
+      { word: "liability", meaning: "負債、責任", phonetic: "/ˌlaɪəˈbɪləti/", example: "The lawsuit is a significant liability for the company.", exampleJa: "その訴訟は会社にとって大きな負債だ。" },
+      { word: "acquisition", meaning: "買収、獲得", phonetic: "/ˌækwɪˈzɪʃən/", example: "The acquisition was completed last month.", exampleJa: "買収は先月完了した。" },
+      { word: "compliance", meaning: "法令遵守、準拠", phonetic: "/kəmˈplaɪəns/", example: "We take regulatory compliance very seriously.", exampleJa: "法令遵守を非常に重視している。" },
+      { word: "initiative", meaning: "施策、主導権", phonetic: "/ɪˈnɪʃətɪv/", example: "She launched a new sustainability initiative.", exampleJa: "彼女は新しいサステナビリティ施策を立ち上げた。" },
+      { word: "overhead", meaning: "間接費、諸経費", phonetic: "/ˌoʊvərˈhed/", example: "Remote work can reduce overhead costs.", exampleJa: "リモートワークは間接費を削減できる。" },
+      { word: "turnover", meaning: "離職率、売上高", phonetic: "/ˈtɜːrnoʊvər/", example: "High employee turnover is costly.", exampleJa: "従業員の高い離職率はコストがかかる。" },
+    ],
+  },
+};
+
+const ALL_WORDS = Object.values(LEVELS).flatMap(l => l.words);
+const REACTIONS = {
+  correct:["ナイス！🔥","完璧！✨","さすが！💪","その調子！🎯","バッチリ！👏"],
+  wrong:["惜しい！😅","ドンマイ！💡","次いこう！🚀","覚えちゃおう！📝"],
+  streak:["3連続正解！すごい！🔥🔥","5連続！天才か！🧠✨","10連続！もう達人じゃん！👑"]
+};
+const shuffle=a=>[...a].sort(()=>Math.random()-.5);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const $=id=>document.getElementById(id);
+const speak=(text,rate=.85)=>{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='en-US';u.rate=rate;u.pitch=1;const v=speechSynthesis.getVoices();const en=v.find(x=>x.lang.startsWith('en')&&x.name.includes('Google'))||v.find(x=>x.lang.startsWith('en'));if(en)u.voice=en;speechSynthesis.speak(u)};
+speechSynthesis.getVoices();
+
+let state={phase:'start',level:null,questions:[],qi:0,selected:null,score:0,streak:0,showExample:false,history:[],mistakes:[]};
+
+function startQuiz(words,levelKey){
+  const pool=shuffle(words).slice(0,10);
+  const allPool=levelKey?LEVELS[levelKey].words:ALL_WORDS;
+  state={phase:'quiz',level:levelKey,qi:0,selected:null,score:0,streak:0,showExample:false,history:[],mistakes:[],
+    questions:pool.map(w=>{
+      const others=shuffle(allPool.filter(x=>x.word!==w.word)).slice(0,3);
+      const options=shuffle([w,...others]);
+      return{...w,options,correctIndex:options.findIndex(o=>o.word===w.word)};
+    })
+  };
+  render();
+}
+
+function handleSelect(idx){
+  if(state.selected!==null)return;
+  state.selected=idx;
+  const q=state.questions[state.qi];
+  const correct=idx===q.correctIndex;
+  state.streak=correct?state.streak+1:0;
+  if(correct){state.score++;speak(q.word)}
+  if(!correct)state.mistakes.push(q);
+  state.history.push({...q,userAnswer:idx,correct});
+  render();
+}
+
+function nextQuestion(){
+  state.selected=null;state.showExample=false;
+  if(state.qi+1>=state.questions.length)state.phase='result';
+  else state.qi++;
+  render();
+}
+
+function render(){
+  const app=$('app');
+  if(state.phase==='start')renderStart(app);
+  else if(state.phase==='quiz')renderQuiz(app);
+  else renderResult(app);
+}
+
+function renderStart(app){
+  let h='<div class="wrap" style="animation:slideUp .6s ease">';
+  h+='<div style="text-align:center;padding-top:32px;margin-bottom:36px">';
+  h+='<div style="font-size:56px;margin-bottom:12px;animation:float 3s ease-in-out infinite">📚</div>';
+  h+='<h1 style="font-size:28px;font-weight:800;margin:0 0 6px;background:linear-gradient(135deg,#64c8ff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent">English Vocab Quiz</h1>';
+  h+='<p style="font-size:14px;color:#7777aa;margin:0">レベルを選んでスタート！</p></div>';
+  h+='<div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px">';
+  for(const[key,lv]of Object.entries(LEVELS)){
+    h+=`<div class="lc" onclick="startQuiz(LEVELS['${key}'].words,'${key}')" style="border:2px solid ${lv.color}33">`;
+    h+=`<div style="position:absolute;top:0;left:0;bottom:0;width:4px;background:${lv.color}"></div>`;
+    h+=`<span style="font-size:32px;flex-shrink:0">${lv.emoji}</span><div style="flex:1">`;
+    h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span style="font-size:18px;font-weight:800">${lv.label}</span>`;
+    h+=`<span style="font-size:11px;padding:2px 8px;border-radius:6px;background:${lv.color}22;color:${lv.color};font-weight:600">${lv.words.length}語</span></div>`;
+    h+=`<p style="margin:0;font-size:13px;color:#8888aa">${lv.desc}</p></div><span style="font-size:20px;color:#555">→</span></div>`;
+  }
+  h+='</div>';
+  h+=`<button onclick="startQuiz(ALL_WORDS,null)" style="width:100%;padding:16px;font-size:16px;font-weight:700;border:2px dashed rgba(255,255,255,.15);border-radius:16px;background:rgba(255,255,255,.02);color:#aaa;cursor:pointer">🎲 全レベルMIX チャレンジ</button>`;
+  h+='</div>';
+  app.innerHTML=h;
+}
+
+function renderQuiz(app){
+  const q=state.questions[state.qi];
+  const lvl=state.level?LEVELS[state.level]:null;
+  const ac=lvl?.color||'#6366f1';
+  const ans=state.selected;
+  const isCorrect=ans!==null&&ans===q.correctIndex;
+  const streakMsg=state.streak===3?REACTIONS.streak[0]:state.streak===5?REACTIONS.streak[1]:state.streak>=10?REACTIONS.streak[2]:null;
+
+  let h='<div class="wrap">';
+  // header
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-top:12px">';
+  h+='<div style="display:flex;align-items:center;gap:10px">';
+  h+=`<button onclick="state.phase='start';render()" style="background:rgba(255,255,255,.06);border:none;border-radius:8px;color:#888;padding:6px 10px;cursor:pointer;font-size:14px">←</button>`;
+  h+=`<span style="font-size:12px;padding:3px 10px;border-radius:8px;background:${lvl?ac+'22':'rgba(255,255,255,.06)'};color:${lvl?ac:'#aaa'};font-weight:700">${lvl?lvl.emoji+' '+lvl.label:'🎲 MIX'}</span></div>`;
+  h+='<div style="display:flex;gap:10px;align-items:center">';
+  h+=`<span style="font-size:13px;color:#6666aa"><strong style="color:#a78bfa;font-size:18px">${state.qi+1}</strong>/${state.questions.length}</span>`;
+  if(state.streak>0)h+=`<span style="font-size:13px;color:#fbbf24;font-weight:600">🔥${state.streak}</span>`;
+  h+=`<span style="font-size:14px;color:#64c8ff;font-weight:700">${state.score}点</span></div></div>`;
+  // progress
+  h+=`<div style="height:4px;background:rgba(255,255,255,.06);border-radius:2px;margin-bottom:28px;overflow:hidden"><div style="height:100%;width:${(state.qi/state.questions.length)*100}%;background:linear-gradient(90deg,${ac},${ac}88);border-radius:2px;transition:width .4s"></div></div>`;
+  // question
+  h+='<div style="animation:slideUp .4s ease">';
+  h+='<div style="display:flex;gap:12px;margin-bottom:24px;align-items:flex-start">';
+  h+=`<div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,${ac},${ac}88);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🎓</div>`;
+  h+='<div style="background:rgba(255,255,255,.06);border-radius:4px 18px 18px 18px;padding:14px 18px;flex:1;border:1px solid rgba(255,255,255,.06)">';
+  h+='<p style="margin:0 0 10px;font-size:13px;color:#8888bb">この意味の英単語は？</p>';
+  h+=`<p style="margin:0;font-size:24px;font-weight:800;line-height:1.3">${q.meaning}</p></div></div>`;
+  // options
+  h+='<div style="display:flex;flex-direction:column;gap:10px">';
+  q.options.forEach((opt,i)=>{
+    const isThis=ans===i,isAns=i===q.correctIndex;
+    let bg='rgba(255,255,255,.04)',bd='rgba(255,255,255,.08)',am='';
+    if(ans!==null&&isAns){bg='rgba(52,211,153,.15)';bd='#34d399'}
+    if(ans!==null&&isThis&&!isAns){bg='rgba(248,113,113,.15)';bd='#f87171';am='animation:shake .4s ease;'}
+    const circBg=ans!==null&&isAns?'rgba(52,211,153,.3)':ans!==null&&isThis?'rgba(248,113,113,.3)':'rgba(255,255,255,.06)';
+    const circCol=ans!==null&&isAns?'#34d399':ans!==null&&isThis?'#f87171':'#8888aa';
+    const label=ans!==null?(isAns?'✓':isThis?'✗':String.fromCharCode(65+i)):String.fromCharCode(65+i);
+    h+=`<button class="ob ${ans!==null?'ad':''}" onclick="handleSelect(${i})" style="background:${bg};border-color:${bd};${am}">`;
+    h+=`<span style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;background:${circBg};color:${circCol}">${label}</span>`;
+    h+=`<span>${opt.word}</span>`;
+    if(ans!==null&&isAns)h+=`<span class="sb" onclick="event.stopPropagation();speak('${opt.word}')" style="margin-left:auto;font-size:18px">🔊</span>`;
+    h+='</button>';
+  });
+  h+='</div>';
+  // after answer
+  if(ans!==null){
+    h+='<div style="animation:pop .3s ease;margin-top:18px">';
+    h+='<div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:14px">';
+    h+=`<div style="width:42px;height:42px;border-radius:50%;background:${isCorrect?'linear-gradient(135deg,#34d399,#22d3ee)':'linear-gradient(135deg,#f97316,#f87171)'};display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${isCorrect?'😄':'🤔'}</div>`;
+    h+='<div style="background:rgba(255,255,255,.06);border-radius:4px 18px 18px 18px;padding:12px 16px;flex:1;border:1px solid rgba(255,255,255,.06)">';
+    h+=`<p style="margin:0;font-size:15px;font-weight:700">${isCorrect?(streakMsg||pick(REACTIONS.correct)):pick(REACTIONS.wrong)}</p>`;
+    if(!isCorrect)h+=`<p style="margin:4px 0 0;font-size:13px;color:#aaa">正解は <strong style="color:#34d399">${q.word}</strong> だよ！</p>`;
+    h+='</div></div>';
+    // phonetic
+    const we=q.word.replace(/'/g,"\\'");
+    h+=`<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;margin-bottom:10px;background:rgba(255,255,255,.04);border-radius:12px;border:1px solid rgba(255,255,255,.06)">`;
+    h+=`<span class="sb" onclick="speak('${we}')" style="font-size:26px">🔊</span>`;
+    h+=`<span style="font-size:18px;font-weight:700">${q.word}</span>`;
+    h+=`<span style="font-size:13px;color:#8888aa">${q.phonetic}</span></div>`;
+    // example
+    const ee=q.example.replace(/'/g,"\\'");
+    if(!state.showExample){
+      h+=`<button onclick="state.showExample=true;render();setTimeout(()=>speak('${ee}',.8),300)" style="width:100%;padding:11px;background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);border-radius:12px;color:#a78bfa;font-size:14px;font-weight:600;cursor:pointer">📖 例文を見る &amp; 聴く</button>`;
+    }else{
+      h+='<div style="padding:14px;background:rgba(99,102,241,.08);border-radius:12px;border:1px solid rgba(99,102,241,.2);animation:pop .3s ease">';
+      h+='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">';
+      h+=`<p style="margin:0 0 4px;font-size:14px;font-weight:600;line-height:1.5;flex:1">"${q.example}"</p>`;
+      h+=`<span class="sb" onclick="speak('${ee}',.8)" style="font-size:20px;flex-shrink:0">🔊</span></div>`;
+      h+=`<p style="margin:0;font-size:12px;color:#8888aa;line-height:1.5">${q.exampleJa}</p></div>`;
+    }
+    h+=`<button onclick="nextQuestion()" style="width:100%;margin-top:14px;padding:13px;font-size:15px;font-weight:700;border:none;border-radius:14px;cursor:pointer;color:#fff;background:linear-gradient(135deg,${ac},${ac}bb);box-shadow:0 4px 20px ${ac}44">${state.qi+1>=state.questions.length?'結果を見る 🏆':'次へ →'}</button>`;
+    h+='</div>';
+  }
+  h+='</div></div>';
+  app.innerHTML=h;
+}
+
+function renderResult(app){
+  const lvl=state.level?LEVELS[state.level]:null;
+  const ac=lvl?.color||'#6366f1';
+  let h='<div class="wrap" style="animation:slideUp .5s ease">';
+  h+='<div style="text-align:center;margin-bottom:28px;padding-top:24px">';
+  h+=`<div style="font-size:64px;margin-bottom:8px;animation:pop .5s ease">${state.score>=9?'🏆':state.score>=7?'🎉':state.score>=5?'👍':'💪'}</div>`;
+  if(lvl)h+=`<span style="font-size:12px;padding:3px 12px;border-radius:8px;background:${lvl.color}22;color:${lvl.color};font-weight:700">${lvl.emoji} ${lvl.label}</span>`;
+  h+=`<h2 style="font-size:26px;font-weight:800;margin:10px 0 8px">${state.score>=9?'すばらしい！':state.score>=7?'いい感じ！':state.score>=5?'まずまず！':'伸びしろたっぷり！'}</h2>`;
+  h+=`<div style="display:inline-flex;align-items:baseline;gap:4px;background:rgba(99,102,241,.15);padding:10px 24px;border-radius:14px">`;
+  h+=`<span style="font-size:42px;font-weight:800;color:${ac}">${state.score}</span>`;
+  h+=`<span style="font-size:18px;color:#6666aa">/ ${state.questions.length}</span></div></div>`;
+  h+='<h3 style="font-size:14px;color:#8888aa;margin-bottom:10px;font-weight:600">📋 回答一覧</h3>';
+  h+='<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:24px">';
+  state.history.forEach(item=>{
+    const we=item.word.replace(/'/g,"\\'");
+    h+=`<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(255,255,255,.04);border-radius:10px;border:1px solid ${item.correct?'rgba(52,211,153,.2)':'rgba(248,113,113,.2)'}">`;
+    h+=`<span style="font-size:16px">${item.correct?'✅':'❌'}</span>`;
+    h+=`<div style="flex:1;min-width:0"><span style="font-weight:700;font-size:14px">${item.word}</span><span style="font-size:12px;color:#8888aa;margin-left:6px">${item.meaning}</span></div>`;
+    h+=`<span class="sb" onclick="speak('${we}')" style="font-size:16px">🔊</span></div>`;
+  });
+  h+='</div><div style="display:flex;flex-direction:column;gap:10px">';
+  if(state.mistakes.length>0){
+    h+=`<button onclick="retryMistakes()" style="padding:13px;font-size:14px;font-weight:700;border:2px solid rgba(248,113,113,.3);border-radius:14px;background:rgba(248,113,113,.08);color:#f87171;cursor:pointer">🔄 間違えた${state.mistakes.length}問を復習</button>`;
+  }
+  h+=`<button onclick="startQuiz(${state.level?"LEVELS['"+state.level+"'].words":'ALL_WORDS'},${state.level?"'"+state.level+"'":'null'})" style="padding:13px;font-size:14px;font-weight:700;border:none;border-radius:14px;background:linear-gradient(135deg,${ac},${ac}bb);color:#fff;cursor:pointer;box-shadow:0 4px 20px ${ac}33">🎯 同じレベルでもう一回！</button>`;
+  h+=`<button onclick="state.phase='start';render()" style="padding:11px;font-size:13px;font-weight:600;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:transparent;color:#8888aa;cursor:pointer">レベル選択に戻る</button>`;
+  h+='</div></div>';
+  app.innerHTML=h;
+}
+
+function retryMistakes(){
+  const m=state.mistakes;
+  const lvl=state.level?LEVELS[state.level]:null;
+  const pool=lvl?.words||ALL_WORDS;
+  const extra=m.length<4?shuffle(pool.filter(w=>!m.find(x=>x.word===w.word))).slice(0,4-m.length):[];
+  startQuiz([...m,...extra],state.level);
+}
+
+render();
+</script>
+</body>
+</html>
