@@ -14,6 +14,8 @@ body{min-height:100vh;background:linear-gradient(145deg,#0a0a1a,#1a1a3e 50%,#0d0
 @keyframes pop{0%{transform:scale(.8);opacity:0}50%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes glow{0%,100%{text-shadow:0 0 10px rgba(251,191,36,.3)}50%{text-shadow:0 0 25px rgba(251,191,36,.6)}}
+@keyframes spin{to{transform:rotate(360deg)}}
 .ob{transition:all .2s;cursor:pointer;border:2px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:14px;color:#e8e8f0;font-size:17px;font-weight:600;text-align:left;width:100%}
 .ob:hover:not(.ad){transform:translateY(-2px);border-color:rgba(100,200,255,.4);background:rgba(100,200,255,.08)!important}
 .ob.ad{cursor:default}
@@ -23,12 +25,46 @@ body{min-height:100vh;background:linear-gradient(145deg,#0a0a1a,#1a1a3e 50%,#0d0
 .lc:hover{transform:translateY(-6px) scale(1.02)}
 .wrap{max-width:520px;margin:0 auto;padding:24px 20px 40px}
 button{font-family:inherit}
-.hidden{display:none!important}
+.streak-banner{background:linear-gradient(135deg,rgba(251,191,36,.15),rgba(245,158,11,.08));border:1px solid rgba(251,191,36,.3);border-radius:16px;padding:16px;margin-bottom:20px;text-align:center;animation:slideUp .5s ease}
+.stat-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px;text-align:center;flex:1}
+.history-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(255,255,255,.04);border-radius:10px;border:1px solid rgba(255,255,255,.06)}
+.fi{width:100%;padding:14px 16px;font-size:16px;border:2px solid rgba(255,255,255,.1);border-radius:12px;background:rgba(255,255,255,.06);color:#e8e8f0;font-family:inherit;outline:none;transition:border-color .2s}
+.fi:focus{border-color:rgba(99,102,241,.5)}
+.fi::placeholder{color:#666}
+.btn-primary{width:100%;padding:16px;font-size:17px;font-weight:700;border:none;border-radius:14px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;cursor:pointer;box-shadow:0 8px 32px rgba(99,102,241,.4);transition:all .2s}
+.btn-primary:disabled{opacity:.5;cursor:wait}
+.err-msg{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);border-radius:10px;padding:10px 14px;font-size:13px;color:#f87171;margin-bottom:14px;text-align:center}
+.spinner{display:inline-block;width:20px;height:20px;border:3px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
 </style>
 </head>
 <body>
-<div id="app"></div>
+<div id="app"><div class="wrap" style="text-align:center;padding-top:40vh"><div class="spinner"></div><p style="margin-top:12px;color:#666;font-size:13px">読み込み中...</p></div></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script>
+
+// ╔══════════════════════════════════════════╗
+// ║  ↓↓↓ ここにFirebaseの設定を貼る ↓↓↓   ║
+// ╚══════════════════════════════════════════╝
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "000000000000",
+  appId: "YOUR_APP_ID"
+};
+// ╔══════════════════════════════════════════╗
+// ║  ↑↑↑ ここまで ↑↑↑                      ║
+// ╚══════════════════════════════════════════╝
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
 
 const LEVELS = {
   foundation: {
@@ -337,18 +373,83 @@ const REACTIONS = {
   wrong:["惜しい！😅","ドンマイ！💡","次いこう！🚀","覚えちゃおう！📝"],
   streak:["3連続正解！すごい！🔥🔥","5連続！天才か！🧠✨","10連続！もう達人じゃん！👑"]
 };
+
+const STREAK_MSGS = {
+  1:["今日も一歩前進！最初の一回が一番えらい💪","千里の道も一歩から。その一歩、踏んだね👣"],
+  2:["2日連続！昨日の自分を超えた！🌟","おっ、2日目。これはもう習慣の芽が出てる🌱"],
+  3:["3日坊主を突破！もう坊主じゃない、修行僧だ🧘","3日続いた。三日月が満月に向かい始めた🌙"],
+  5:["5日連続！平日まるっと制覇。社会人の鑑✨","5日！手のひらの指ぜんぶ分がんばった🖐️"],
+  7:["1週間！！もう「英語やってる人」を名乗っていい📛","7日連続。神様が世界を作ったのと同じ日数😇"],
+  10:["10日！二桁の民。もう戻れない沼へようこそ🕳️","10日続けた人だけが見える景色がある🏔️"],
+  14:["2週間！これはもう才能じゃなくて根性🔥","14日。半月分の努力、月もびっくり🌓"],
+  21:["21日！科学的に習慣化完了。おめでとう、英語体質です🧬","3週間。赤ちゃんなら首が座るくらいの成長期間👶"],
+  30:["1ヶ月！！！伝説の始まり。映画化決定🎬","30日。日本語で言うと「すごすぎて語彙力が足りない」📖"],
+  50:["50日。もはや辞書が友達。いや、辞書を超えた📚","半世紀日（？）達成。歴史に刻め⚔️"],
+  100:["100日！！！偉業。教科書に載るレベル🏛️","100日続けた人類はそう多くない。誇っていい👑"],
+  200:["200日！もはや英単語が母国語になりつつある🗾","200日。もう年の半分以上やってるんだけど？🤯"],
+  365:["1年！！！！！あなたは伝説です。銅像を建てるべき🗽","365日。地球が太陽を一周する間ずっと。すごすぎる🌍"],
+};
+
+function getStreakMsg(days){
+  const keys=[365,200,100,50,30,21,14,10,7,5,3,2,1];
+  for(const k of keys){if(days>=k)return pick(STREAK_MSGS[k])}
+  return "今日も始めよう！";
+}
+
 const shuffle=a=>[...a].sort(()=>Math.random()-.5);
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 const $=id=>document.getElementById(id);
 const speak=(text,rate=.85)=>{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='en-US';u.rate=rate;u.pitch=1;const v=speechSynthesis.getVoices();const en=v.find(x=>x.lang.startsWith('en')&&x.name.includes('Google'))||v.find(x=>x.lang.startsWith('en'));if(en)u.voice=en;speechSynthesis.speak(u)};
 speechSynthesis.getVoices();
 
-let state={phase:'start',level:null,questions:[],qi:0,selected:null,score:0,streak:0,showExample:false,history:[],mistakes:[]};
+// ── Firestore記録管理 ──
+let cachedRecords=null;
+async function getRecords(){
+  const u=auth.currentUser;if(!u)return[];
+  if(cachedRecords)return cachedRecords;
+  try{
+    const snap=await db.collection('users').doc(u.uid).collection('records').orderBy('time','desc').get();
+    cachedRecords=snap.docs.map(d=>d.data());
+    return cachedRecords;
+  }catch(e){console.error(e);return[]}
+}
+async function saveRecord(rec){
+  const u=auth.currentUser;if(!u)return;
+  try{
+    await db.collection('users').doc(u.uid).collection('records').add(rec);
+    cachedRecords=null;
+  }catch(e){console.error(e)}
+}
+async function getStreak(){
+  const r=await getRecords();if(!r.length)return 0;
+  const dates=[...new Set(r.map(x=>x.date))].sort().reverse();
+  const today=new Date().toISOString().slice(0,10);
+  const yesterday=new Date(Date.now()-864e5).toISOString().slice(0,10);
+  if(dates[0]!==today&&dates[0]!==yesterday)return 0;
+  let streak=1;
+  for(let i=0;i<dates.length-1;i++){
+    const d1=new Date(dates[i]),d2=new Date(dates[i+1]);
+    if((d1-d2)/(864e5)===1)streak++;else break;
+  }
+  return streak;
+}
+async function getTodayCount(){const today=new Date().toISOString().slice(0,10);return(await getRecords()).filter(r=>r.date===today).length}
+async function getTotalQuizzes(){return(await getRecords()).length}
+async function getBestScore(){const r=await getRecords();return r.length?Math.max(...r.map(x=>x.score)):0}
+async function clearRecords(){
+  const u=auth.currentUser;if(!u)return;
+  const snap=await db.collection('users').doc(u.uid).collection('records').get();
+  const batch=db.batch();snap.docs.forEach(d=>batch.delete(d.ref));
+  await batch.commit();cachedRecords=null;
+}
+
+// ── State ──
+let state={phase:'start',level:null,questions:[],qi:0,selected:null,score:0,streak:0,showExample:false,history:[],mistakes:[],authMode:'login',authError:'',authLoading:false,userName:''};
 
 function startQuiz(words,levelKey){
   const pool=shuffle(words).slice(0,10);
   const allPool=levelKey?LEVELS[levelKey].words:ALL_WORDS;
-  state={phase:'quiz',level:levelKey,qi:0,selected:null,score:0,streak:0,showExample:false,history:[],mistakes:[],
+  state={...state,phase:'quiz',level:levelKey,qi:0,selected:null,score:0,streak:0,showExample:false,history:[],mistakes:[],
     questions:pool.map(w=>{
       const others=shuffle(allPool.filter(x=>x.word!==w.word)).slice(0,3);
       const options=shuffle([w,...others]);
@@ -370,26 +471,134 @@ function handleSelect(idx){
   render();
 }
 
-function nextQuestion(){
+async function nextQuestion(){
   state.selected=null;state.showExample=false;
-  if(state.qi+1>=state.questions.length)state.phase='result';
+  if(state.qi+1>=state.questions.length){
+    state.phase='result';
+    const lvl=state.level?LEVELS[state.level]:null;
+    await saveRecord({date:new Date().toISOString().slice(0,10),level:lvl?.label||'MIX',score:state.score,total:state.questions.length,time:Date.now()});
+  }
   else state.qi++;
   render();
 }
 
-function render(){
-  const app=$('app');
-  if(state.phase==='start')renderStart(app);
-  else if(state.phase==='quiz')renderQuiz(app);
-  else renderResult(app);
+// ── Auth ──
+async function doSignup(){
+  const name=$('auth-name')?.value.trim();
+  const email=$('auth-email')?.value.trim();
+  const pass=$('auth-pass')?.value;
+  if(!name){state.authError='名前を入力してください';render();return}
+  if(!email||!email.includes('@')){state.authError='メールアドレスを正しく入力してください';render();return}
+  if(!pass||pass.length<6){state.authError='パスワードは6文字以上にしてください';render();return}
+  state.authLoading=true;state.authError='';render();
+  try{
+    const cred=await auth.createUserWithEmailAndPassword(email,pass);
+    await cred.user.updateProfile({displayName:name});
+    await db.collection('users').doc(cred.user.uid).set({name,email,created:Date.now()});
+    state.userName=name;state.phase='start';cachedRecords=null;
+  }catch(e){
+    state.authError=e.code==='auth/email-already-in-use'?'このメールアドレスは既に登録されています':e.code==='auth/weak-password'?'パスワードが弱すぎます（6文字以上）':e.code==='auth/invalid-email'?'メールアドレスの形式が正しくありません':'登録に失敗しました: '+e.message;
+  }
+  state.authLoading=false;render();
+}
+async function doLogin(){
+  const email=$('auth-email')?.value.trim();
+  const pass=$('auth-pass')?.value;
+  if(!email||!email.includes('@')){state.authError='メールアドレスを正しく入力してください';render();return}
+  if(!pass){state.authError='パスワードを入力してください';render();return}
+  state.authLoading=true;state.authError='';render();
+  try{
+    const cred=await auth.signInWithEmailAndPassword(email,pass);
+    state.userName=cred.user.displayName||'';state.phase='start';cachedRecords=null;
+  }catch(e){
+    state.authError=e.code==='auth/user-not-found'?'このメールアドレスは登録されていません':e.code==='auth/wrong-password'||e.code==='auth/invalid-credential'?'パスワードが間違っています':'ログインに失敗しました: '+e.message;
+  }
+  state.authLoading=false;render();
+}
+async function doLogout(){
+  if(!confirm('ログアウトしますか？'))return;
+  await auth.signOut();cachedRecords=null;state.phase='login';render();
 }
 
-function renderStart(app){
+function render(){
+  const app=$('app');
+  const u=auth.currentUser;
+  if(!u){renderAuth(app);return}
+  if(state.phase==='start')renderStart(app);
+  else if(state.phase==='quiz')renderQuiz(app);
+  else if(state.phase==='result')renderResult(app);
+  else if(state.phase==='stats')renderStats(app);
+  else renderStart(app);
+}
+
+function renderAuth(app){
+  const isSignup=state.authMode==='signup';
   let h='<div class="wrap" style="animation:slideUp .6s ease">';
-  h+='<div style="text-align:center;padding-top:32px;margin-bottom:36px">';
+  h+='<div style="text-align:center;padding-top:40px;margin-bottom:36px">';
+  h+='<div style="font-size:56px;margin-bottom:16px;animation:float 3s ease-in-out infinite">📚</div>';
+  h+='<h1 style="font-size:28px;font-weight:800;margin:0 0 8px;background:linear-gradient(135deg,#64c8ff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent">English Vocab Quiz</h1>';
+  h+=`<p style="font-size:14px;color:#7777aa;margin:0">${isSignup?'新規登録して学習を始めよう！':'おかえりなさい！ログインしよう'}</p></div>`;
+
+  // tab
+  h+='<div style="display:flex;margin-bottom:24px;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.1)">';
+  h+=`<button onclick="state.authMode='login';state.authError='';render()" style="flex:1;padding:10px;font-size:14px;font-weight:700;border:none;cursor:pointer;${!isSignup?'background:rgba(99,102,241,.2);color:#a78bfa':'background:transparent;color:#666'}">ログイン</button>`;
+  h+=`<button onclick="state.authMode='signup';state.authError='';render()" style="flex:1;padding:10px;font-size:14px;font-weight:700;border:none;cursor:pointer;${isSignup?'background:rgba(99,102,241,.2);color:#a78bfa':'background:transparent;color:#666'}">新規登録</button>`;
+  h+='</div>';
+
+  if(state.authError)h+=`<div class="err-msg">${state.authError}</div>`;
+
+  h+='<div style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px">';
+  if(isSignup){
+    h+='<div><label style="font-size:13px;color:#8888aa;font-weight:600;display:block;margin-bottom:6px">名前</label>';
+    h+='<input id="auth-name" class="fi" type="text" placeholder="例：佑介"></div>';
+  }
+  h+='<div><label style="font-size:13px;color:#8888aa;font-weight:600;display:block;margin-bottom:6px">メールアドレス</label>';
+  h+='<input id="auth-email" class="fi" type="email" placeholder="you@example.com"></div>';
+  h+='<div><label style="font-size:13px;color:#8888aa;font-weight:600;display:block;margin-bottom:6px">パスワード</label>';
+  h+=`<input id="auth-pass" class="fi" type="password" placeholder="${isSignup?'6文字以上で設定':'パスワードを入力'}" onkeydown="if(event.key==='Enter')${isSignup?'doSignup()':'doLogin()'}"></div>`;
+  h+='</div>';
+
+  h+=`<button class="btn-primary" onclick="${isSignup?'doSignup()':'doLogin()'}" ${state.authLoading?'disabled':''}>${state.authLoading?'<span class="spinner"></span>':isSignup?'登録して始める 🚀':'ログイン 🚀'}</button>`;
+
+  h+='<p style="text-align:center;font-size:11px;color:#555;margin-top:16px;line-height:1.6">どの端末からでもログインすれば<br>学習記録がずっと引き継がれます 🔄</p>';
+  h+='</div>';
+  app.innerHTML=h;
+}
+
+async function renderStart(app){
+  const u=auth.currentUser;
+  const name=u?.displayName||state.userName||'';
+  const [dayStreak,todayN,totalQ,bestScore]=await Promise.all([getStreak(),getTodayCount(),getTotalQuizzes(),getBestScore()]);
+
+  let h='<div class="wrap" style="animation:slideUp .6s ease">';
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;margin-bottom:16px">';
+  h+=`<div style="display:flex;align-items:center;gap:8px"><div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff">${(name||'?')[0]}</div>`;
+  h+=`<span style="font-size:14px;font-weight:700">${name}</span></div>`;
+  h+='<button onclick="doLogout()" style="font-size:11px;padding:4px 10px;border:1px solid rgba(255,255,255,.1);border-radius:8px;background:transparent;color:#666;cursor:pointer">ログアウト</button></div>';
+
+  h+='<div style="text-align:center;margin-bottom:20px">';
   h+='<div style="font-size:56px;margin-bottom:12px;animation:float 3s ease-in-out infinite">📚</div>';
   h+='<h1 style="font-size:28px;font-weight:800;margin:0 0 6px;background:linear-gradient(135deg,#64c8ff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent">English Vocab Quiz</h1>';
-  h+='<p style="font-size:14px;color:#7777aa;margin:0">レベルを選んでスタート！</p></div>';
+  h+=`<p style="font-size:14px;color:#7777aa;margin:0">${name}さん、今日もやっていこう！</p></div>`;
+
+  if(totalQ>0){
+    h+='<div class="streak-banner">';
+    if(dayStreak>0){
+      h+=`<div style="font-size:14px;color:#fbbf24;font-weight:800;margin-bottom:6px;animation:glow 2s ease-in-out infinite">🔥 ${dayStreak}日連続チャレンジ中！</div>`;
+      h+=`<div style="font-size:13px;color:#ddd;line-height:1.5">${getStreakMsg(dayStreak)}</div>`;
+    }else{
+      h+='<div style="font-size:14px;color:#fbbf24;font-weight:700;margin-bottom:4px">⏰ 連続記録が途切れそう！</div>';
+      h+='<div style="font-size:13px;color:#aaa">今日やれば記録復活！</div>';
+    }
+    h+='</div>';
+    h+='<div style="display:flex;gap:8px;margin-bottom:20px">';
+    h+=`<div class="stat-card"><div style="font-size:22px;font-weight:800;color:#64c8ff">${todayN}</div><div style="font-size:11px;color:#8888aa">今日</div></div>`;
+    h+=`<div class="stat-card"><div style="font-size:22px;font-weight:800;color:#a78bfa">${totalQ}</div><div style="font-size:11px;color:#8888aa">累計</div></div>`;
+    h+=`<div class="stat-card"><div style="font-size:22px;font-weight:800;color:#fbbf24">${dayStreak}</div><div style="font-size:11px;color:#8888aa">連続日</div></div>`;
+    h+=`<div class="stat-card"><div style="font-size:22px;font-weight:800;color:#34d399">${bestScore}</div><div style="font-size:11px;color:#8888aa">最高点</div></div>`;
+    h+='</div>';
+  }
+
   h+='<div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px">';
   for(const[key,lv]of Object.entries(LEVELS)){
     h+=`<div class="lc" onclick="startQuiz(LEVELS['${key}'].words,'${key}')" style="border:2px solid ${lv.color}33">`;
@@ -400,7 +609,10 @@ function renderStart(app){
     h+=`<p style="margin:0;font-size:13px;color:#8888aa">${lv.desc}</p></div><span style="font-size:20px;color:#555">→</span></div>`;
   }
   h+='</div>';
-  h+=`<button onclick="startQuiz(ALL_WORDS,null)" style="width:100%;padding:16px;font-size:16px;font-weight:700;border:2px dashed rgba(255,255,255,.15);border-radius:16px;background:rgba(255,255,255,.02);color:#aaa;cursor:pointer">🎲 全レベルMIX チャレンジ</button>`;
+  h+='<button onclick="startQuiz(ALL_WORDS,null)" style="width:100%;padding:16px;font-size:16px;font-weight:700;border:2px dashed rgba(255,255,255,.15);border-radius:16px;background:rgba(255,255,255,.02);color:#aaa;cursor:pointer">🎲 全レベルMIX チャレンジ</button>';
+  if(totalQ>0){
+    h+='<button onclick="state.phase=\'stats\';renderStatsAsync()" style="width:100%;margin-top:10px;padding:12px;font-size:14px;font-weight:600;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:transparent;color:#8888aa;cursor:pointer">📊 学習記録を見る</button>';
+  }
   h+='</div>';
   app.innerHTML=h;
 }
@@ -414,25 +626,21 @@ function renderQuiz(app){
   const streakMsg=state.streak===3?REACTIONS.streak[0]:state.streak===5?REACTIONS.streak[1]:state.streak>=10?REACTIONS.streak[2]:null;
 
   let h='<div class="wrap">';
-  // header
   h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-top:12px">';
   h+='<div style="display:flex;align-items:center;gap:10px">';
-  h+=`<button onclick="state.phase='start';render()" style="background:rgba(255,255,255,.06);border:none;border-radius:8px;color:#888;padding:6px 10px;cursor:pointer;font-size:14px">←</button>`;
+  h+='<button onclick="state.phase=\'start\';render()" style="background:rgba(255,255,255,.06);border:none;border-radius:8px;color:#888;padding:6px 10px;cursor:pointer;font-size:14px">←</button>';
   h+=`<span style="font-size:12px;padding:3px 10px;border-radius:8px;background:${lvl?ac+'22':'rgba(255,255,255,.06)'};color:${lvl?ac:'#aaa'};font-weight:700">${lvl?lvl.emoji+' '+lvl.label:'🎲 MIX'}</span></div>`;
   h+='<div style="display:flex;gap:10px;align-items:center">';
   h+=`<span style="font-size:13px;color:#6666aa"><strong style="color:#a78bfa;font-size:18px">${state.qi+1}</strong>/${state.questions.length}</span>`;
   if(state.streak>0)h+=`<span style="font-size:13px;color:#fbbf24;font-weight:600">🔥${state.streak}</span>`;
   h+=`<span style="font-size:14px;color:#64c8ff;font-weight:700">${state.score}点</span></div></div>`;
-  // progress
   h+=`<div style="height:4px;background:rgba(255,255,255,.06);border-radius:2px;margin-bottom:28px;overflow:hidden"><div style="height:100%;width:${(state.qi/state.questions.length)*100}%;background:linear-gradient(90deg,${ac},${ac}88);border-radius:2px;transition:width .4s"></div></div>`;
-  // question
   h+='<div style="animation:slideUp .4s ease">';
   h+='<div style="display:flex;gap:12px;margin-bottom:24px;align-items:flex-start">';
   h+=`<div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,${ac},${ac}88);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🎓</div>`;
   h+='<div style="background:rgba(255,255,255,.06);border-radius:4px 18px 18px 18px;padding:14px 18px;flex:1;border:1px solid rgba(255,255,255,.06)">';
   h+='<p style="margin:0 0 10px;font-size:13px;color:#8888bb">この意味の英単語は？</p>';
   h+=`<p style="margin:0;font-size:24px;font-weight:800;line-height:1.3">${q.meaning}</p></div></div>`;
-  // options
   h+='<div style="display:flex;flex-direction:column;gap:10px">';
   q.options.forEach((opt,i)=>{
     const isThis=ans===i,isAns=i===q.correctIndex;
@@ -449,7 +657,6 @@ function renderQuiz(app){
     h+='</button>';
   });
   h+='</div>';
-  // after answer
   if(ans!==null){
     h+='<div style="animation:pop .3s ease;margin-top:18px">';
     h+='<div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:14px">';
@@ -458,13 +665,11 @@ function renderQuiz(app){
     h+=`<p style="margin:0;font-size:15px;font-weight:700">${isCorrect?(streakMsg||pick(REACTIONS.correct)):pick(REACTIONS.wrong)}</p>`;
     if(!isCorrect)h+=`<p style="margin:4px 0 0;font-size:13px;color:#aaa">正解は <strong style="color:#34d399">${q.word}</strong> だよ！</p>`;
     h+='</div></div>';
-    // phonetic
     const we=q.word.replace(/'/g,"\\'");
     h+=`<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;margin-bottom:10px;background:rgba(255,255,255,.04);border-radius:12px;border:1px solid rgba(255,255,255,.06)">`;
     h+=`<span class="sb" onclick="speak('${we}')" style="font-size:26px">🔊</span>`;
     h+=`<span style="font-size:18px;font-weight:700">${q.word}</span>`;
     h+=`<span style="font-size:13px;color:#8888aa">${q.phonetic}</span></div>`;
-    // example
     const ee=q.example.replace(/'/g,"\\'");
     if(!state.showExample){
       h+=`<button onclick="state.showExample=true;render();setTimeout(()=>speak('${ee}',.8),300)" style="width:100%;padding:11px;background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);border-radius:12px;color:#a78bfa;font-size:14px;font-weight:600;cursor:pointer">📖 例文を見る &amp; 聴く</button>`;
@@ -482,22 +687,32 @@ function renderQuiz(app){
   app.innerHTML=h;
 }
 
-function renderResult(app){
+async function renderResult(app){
   const lvl=state.level?LEVELS[state.level]:null;
   const ac=lvl?.color||'#6366f1';
+  const dayStreak=await getStreak();
+
   let h='<div class="wrap" style="animation:slideUp .5s ease">';
-  h+='<div style="text-align:center;margin-bottom:28px;padding-top:24px">';
+  h+='<div style="text-align:center;margin-bottom:24px;padding-top:24px">';
   h+=`<div style="font-size:64px;margin-bottom:8px;animation:pop .5s ease">${state.score>=9?'🏆':state.score>=7?'🎉':state.score>=5?'👍':'💪'}</div>`;
   if(lvl)h+=`<span style="font-size:12px;padding:3px 12px;border-radius:8px;background:${lvl.color}22;color:${lvl.color};font-weight:700">${lvl.emoji} ${lvl.label}</span>`;
   h+=`<h2 style="font-size:26px;font-weight:800;margin:10px 0 8px">${state.score>=9?'すばらしい！':state.score>=7?'いい感じ！':state.score>=5?'まずまず！':'伸びしろたっぷり！'}</h2>`;
   h+=`<div style="display:inline-flex;align-items:baseline;gap:4px;background:rgba(99,102,241,.15);padding:10px 24px;border-radius:14px">`;
   h+=`<span style="font-size:42px;font-weight:800;color:${ac}">${state.score}</span>`;
   h+=`<span style="font-size:18px;color:#6666aa">/ ${state.questions.length}</span></div></div>`;
+
+  if(dayStreak>0){
+    h+='<div class="streak-banner">';
+    h+=`<div style="font-size:15px;color:#fbbf24;font-weight:800;margin-bottom:6px">🔥 ${dayStreak}日連続！</div>`;
+    h+=`<div style="font-size:13px;color:#ddd;line-height:1.5">${getStreakMsg(dayStreak)}</div>`;
+    h+='</div>';
+  }
+
   h+='<h3 style="font-size:14px;color:#8888aa;margin-bottom:10px;font-weight:600">📋 回答一覧</h3>';
   h+='<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:24px">';
   state.history.forEach(item=>{
     const we=item.word.replace(/'/g,"\\'");
-    h+=`<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(255,255,255,.04);border-radius:10px;border:1px solid ${item.correct?'rgba(52,211,153,.2)':'rgba(248,113,113,.2)'}">`;
+    h+=`<div class="history-row" style="border-color:${item.correct?'rgba(52,211,153,.2)':'rgba(248,113,113,.2)'}">`;
     h+=`<span style="font-size:16px">${item.correct?'✅':'❌'}</span>`;
     h+=`<div style="flex:1;min-width:0"><span style="font-weight:700;font-size:14px">${item.word}</span><span style="font-size:12px;color:#8888aa;margin-left:6px">${item.meaning}</span></div>`;
     h+=`<span class="sb" onclick="speak('${we}')" style="font-size:16px">🔊</span></div>`;
@@ -507,8 +722,51 @@ function renderResult(app){
     h+=`<button onclick="retryMistakes()" style="padding:13px;font-size:14px;font-weight:700;border:2px solid rgba(248,113,113,.3);border-radius:14px;background:rgba(248,113,113,.08);color:#f87171;cursor:pointer">🔄 間違えた${state.mistakes.length}問を復習</button>`;
   }
   h+=`<button onclick="startQuiz(${state.level?"LEVELS['"+state.level+"'].words":'ALL_WORDS'},${state.level?"'"+state.level+"'":'null'})" style="padding:13px;font-size:14px;font-weight:700;border:none;border-radius:14px;background:linear-gradient(135deg,${ac},${ac}bb);color:#fff;cursor:pointer;box-shadow:0 4px 20px ${ac}33">🎯 同じレベルでもう一回！</button>`;
-  h+=`<button onclick="state.phase='start';render()" style="padding:11px;font-size:13px;font-weight:600;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:transparent;color:#8888aa;cursor:pointer">レベル選択に戻る</button>`;
+  h+='<button onclick="state.phase=\'start\';render()" style="padding:11px;font-size:13px;font-weight:600;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:transparent;color:#8888aa;cursor:pointer">レベル選択に戻る</button>';
   h+='</div></div>';
+  app.innerHTML=h;
+}
+
+async function renderStatsAsync(){
+  const app=$('app');
+  app.innerHTML='<div class="wrap" style="text-align:center;padding-top:30vh"><div class="spinner"></div></div>';
+  const records=(await getRecords()).slice();
+  const dayStreak=await getStreak();
+  const totalQ=records.length;
+  const avgScore=totalQ?Math.round(records.reduce((s,r)=>s+r.score,0)/totalQ*10)/10:0;
+  const byDate={};
+  records.forEach(r=>{if(!byDate[r.date])byDate[r.date]=[];byDate[r.date].push(r)});
+
+  let h='<div class="wrap" style="animation:slideUp .5s ease">';
+  h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:24px;padding-top:12px">';
+  h+='<button onclick="state.phase=\'start\';render()" style="background:rgba(255,255,255,.06);border:none;border-radius:8px;color:#888;padding:6px 10px;cursor:pointer;font-size:14px">←</button>';
+  h+='<h2 style="font-size:20px;font-weight:800">📊 学習記録</h2></div>';
+
+  h+='<div style="display:flex;gap:8px;margin-bottom:24px">';
+  h+=`<div class="stat-card"><div style="font-size:24px;font-weight:800;color:#fbbf24">${dayStreak}</div><div style="font-size:11px;color:#8888aa;margin-top:2px">連続日数</div></div>`;
+  h+=`<div class="stat-card"><div style="font-size:24px;font-weight:800;color:#a78bfa">${totalQ}</div><div style="font-size:11px;color:#8888aa;margin-top:2px">累計回数</div></div>`;
+  h+=`<div class="stat-card"><div style="font-size:24px;font-weight:800;color:#34d399">${avgScore}</div><div style="font-size:11px;color:#8888aa;margin-top:2px">平均点</div></div>`;
+  h+='</div>';
+  if(dayStreak>0){
+    h+='<div class="streak-banner" style="margin-bottom:24px">';
+    h+=`<div style="font-size:13px;color:#ddd;line-height:1.5">${getStreakMsg(dayStreak)}</div></div>`;
+  }
+  for(const[date,recs]of Object.entries(byDate)){
+    const d=new Date(date);
+    const dateStr=`${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）`;
+    h+=`<div style="margin-bottom:16px"><div style="font-size:13px;color:#8888aa;font-weight:600;margin-bottom:8px">${dateStr}</div>`;
+    recs.forEach(r=>{
+      const pct=r.score/r.total*100;
+      const col=pct>=90?'#34d399':pct>=70?'#64c8ff':pct>=50?'#fbbf24':'#f87171';
+      h+=`<div class="history-row" style="margin-bottom:4px"><span style="font-size:13px;font-weight:700;color:${col};min-width:40px">${r.score}/${r.total}</span>`;
+      h+=`<div style="flex:1;height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${col};border-radius:3px"></div></div>`;
+      h+=`<span style="font-size:12px;color:#8888aa;min-width:50px;text-align:right">${r.level}</span></div>`;
+    });
+    h+='</div>';
+  }
+  if(!totalQ)h+='<p style="text-align:center;color:#666;padding:40px 0">まだ記録がありません。クイズをやってみよう！</p>';
+  h+='<button onclick="if(confirm(\'本当に全記録を削除しますか？\')){clearRecords().then(()=>{state.phase=\'start\';render()})}" style="width:100%;margin-top:16px;padding:10px;font-size:12px;border:1px solid rgba(255,255,255,.06);border-radius:10px;background:transparent;color:#555;cursor:pointer">記録をリセット</button>';
+  h+='</div>';
   app.innerHTML=h;
 }
 
@@ -520,7 +778,12 @@ function retryMistakes(){
   startQuiz([...m,...extra],state.level);
 }
 
-render();
+// ── Auth状態監視 ──
+auth.onAuthStateChanged(u=>{
+  if(u){state.userName=u.displayName||'';state.phase='start'}
+  else{state.phase='login'}
+  render();
+});
 </script>
 </body>
 </html>
