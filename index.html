@@ -39,6 +39,15 @@ button{font-family:inherit}
 .spelling-reveal{animation:spellin .5s cubic-bezier(.34,1.56,.64,1) both;background:linear-gradient(135deg,rgba(99,102,241,.15),rgba(139,92,246,.08));border:2px solid rgba(99,102,241,.4);border-radius:16px;padding:16px 20px;margin:12px 0;text-align:center}
 .spelling-word{font-size:2rem;font-weight:800;letter-spacing:.05em;color:#a5b4fc;margin-bottom:4px}
 .spelling-phonetic{font-size:.95rem;color:#7777aa;font-style:italic}
+@keyframes chunkIn{0%{opacity:0;transform:translateY(20px) scale(.95)}100%{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.4)}70%{box-shadow:0 0 0 10px rgba(251,191,36,0)}}
+.chunk-card{animation:chunkIn .4s cubic-bezier(.22,1,.36,1) both;background:linear-gradient(135deg,rgba(251,191,36,.12),rgba(245,158,11,.06));border:2px solid rgba(251,191,36,.35);border-radius:20px;padding:28px 24px;text-align:center;margin-bottom:20px}
+.chunk-phrase{font-size:1.65rem;font-weight:800;color:#fde68a;letter-spacing:.02em;line-height:1.3;margin-bottom:8px}
+.chunk-note{font-size:.85rem;color:#a37b2c;font-style:italic}
+.chunk-situation{background:rgba(255,255,255,.05);border-radius:12px;padding:12px 16px;margin-bottom:20px;font-size:15px;color:#c4c4dd;line-height:1.5;border:1px solid rgba(255,255,255,.07)}
+.repeat-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;font-size:15px;font-weight:700;border:2px solid rgba(251,191,36,.3);border-radius:14px;background:rgba(251,191,36,.08);color:#fbbf24;cursor:pointer;transition:all .2s}
+.repeat-btn:active{transform:scale(.97);background:rgba(251,191,36,.15)}
+.daily-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.3);color:#34d399}
 </style>
 </head>
 <body>
@@ -424,6 +433,227 @@ const LEVELS = {
 
 
 const ALL_WORDS = Object.values(LEVELS).flatMap(l => l.words);
+
+// ── チャンクデータ ──
+const CHUNKS = [
+  // 提案・誘い
+  { phrase:"Why don't we ~?", situation:"相手を誘いたいとき", note:"Why don't we grab lunch? のように使う", category:"提案" },
+  { phrase:"How about ~ing?", situation:"別の選択肢を提案するとき", note:"How about trying a different approach?", category:"提案" },
+  { phrase:"What if we ~?", situation:"アイデアを試しに出すとき", note:"What if we just skip the meeting?", category:"提案" },
+  { phrase:"Feel free to ~", situation:"相手に気を遣わせたくないとき", note:"Feel free to ask me anything.", category:"提案" },
+  { phrase:"Go ahead and ~", situation:"相手にどうぞと促すとき", note:"Go ahead and start without me.", category:"提案" },
+  { phrase:"Let's say ~", situation:"仮の話をするとき", note:"Let's say you had one week. What would you do?", category:"提案" },
+
+  // 同意・反応
+  { phrase:"That makes sense.", situation:"相手の説明に納得したとき", note:"「なるほど、筋が通ってる」のニュアンス", category:"反応" },
+  { phrase:"I see what you mean.", situation:"相手の言いたいことが理解できたとき", note:"I agree とは違い「わかった」に近い", category:"反応" },
+  { phrase:"Fair enough.", situation:"完全には賛成じゃないけど認めるとき", note:"「まあ、そうだね」くらいのニュアンス", category:"反応" },
+  { phrase:"Tell me about it.", situation:"相手の愚痴に全力で共感するとき", note:"直訳と逆で「本当にそれ！」の意味", category:"反応" },
+  { phrase:"You've got a point.", situation:"相手の指摘が正しいと認めるとき", note:"That's a good point. より口語的", category:"反応" },
+  { phrase:"I couldn't agree more.", situation:"強く賛成するとき", note:"最大級の同意表現", category:"反応" },
+  { phrase:"No wonder ~", situation:"「〜なのも当然だ」と納得するとき", note:"No wonder you're tired.", category:"反応" },
+
+  // 確認・聞き返し
+  { phrase:"What do you mean by ~?", situation:"相手の言葉の意味を確認したいとき", note:"What do you mean by 'soon'?", category:"確認" },
+  { phrase:"Just to make sure, ~", situation:"認識を確認したいとき", note:"Just to make sure, we meet at 3, right?", category:"確認" },
+  { phrase:"Am I right that ~?", situation:"自分の理解が合ってるか確かめるとき", note:"Am I right that this is optional?", category:"確認" },
+  { phrase:"Could you say that again?", situation:"聞き取れなかったとき", note:"Pardon? より丁寧で自然", category:"確認" },
+  { phrase:"What are you getting at?", situation:"相手が何を言いたいか掴めないとき", note:"やや直接的なので親しい相手に", category:"確認" },
+  { phrase:"Do you happen to know ~?", situation:"遠慮がちに尋ねるとき", note:"Do you happen to know where he went?", category:"確認" },
+
+  // 自分の状態・気持ち
+  { phrase:"I'm looking forward to ~", situation:"楽しみにしていることを伝えるとき", note:"I'm looking forward to seeing you.", category:"気持ち" },
+  { phrase:"I'm not sure about ~", situation:"確信が持てないことを正直に言うとき", note:"I'm not sure about the timing.", category:"気持ち" },
+  { phrase:"I tend to ~", situation:"自分の傾向・癖を話すとき", note:"I tend to overthink things.", category:"気持ち" },
+  { phrase:"I'm used to ~ing", situation:"慣れていることを言うとき", note:"I'm used to working alone.", category:"気持ち" },
+  { phrase:"I can't help ~ing", situation:"〜せずにいられないとき", note:"I can't help laughing.", category:"気持ち" },
+  { phrase:"I was about to ~", situation:"ちょうどしようとしていたとき", note:"I was about to call you!", category:"気持ち" },
+  { phrase:"I had no idea ~", situation:"全く知らなかったと伝えるとき", note:"I had no idea it was that expensive.", category:"気持ち" },
+  { phrase:"It's not that ~, it's just that ~", situation:"誤解を解きたいとき", note:"It's not that I don't like it, it's just that I'm tired.", category:"気持ち" },
+
+  // 話の流れを作る
+  { phrase:"Come to think of it,", situation:"ふと思い出したとき", note:"「そういえば」のニュアンス", category:"つなぎ" },
+  { phrase:"Speaking of which,", situation:"話題をつなげるとき", note:"「そういえばそれで思い出したけど」", category:"つなぎ" },
+  { phrase:"Now that you mention it,", situation:"相手の言葉で思い出したとき", note:"「言われてみれば」のニュアンス", category:"つなぎ" },
+  { phrase:"As far as I know,", situation:"自分の知る限りで答えるとき", note:"「私が知る限りでは」で断言を避ける", category:"つなぎ" },
+  { phrase:"To be honest,", situation:"本音を切り出すとき", note:"Honestly, より少しソフト", category:"つなぎ" },
+  { phrase:"Not to mention ~", situation:"さらに付け加えるとき", note:"Not to mention the cost.", category:"つなぎ" },
+  { phrase:"If anything, ~", situation:"「どちらかといえば」と言いたいとき", note:"If anything, it made things worse.", category:"つなぎ" },
+  { phrase:"That said, ~", situation:"前の内容を認めつつ転換するとき", note:"「とはいえ」「だがしかし」のニュアンス", category:"つなぎ" },
+
+  // お願い・依頼
+  { phrase:"Would you mind ~ing?", situation:"丁寧にお願いするとき", note:"Would you mind closing the door?", category:"依頼" },
+  { phrase:"Is it okay if I ~?", situation:"許可を求めるとき", note:"Is it okay if I leave early today?", category:"依頼" },
+  { phrase:"Could you do me a favor?", situation:"頼み事をする前置きとして", note:"まず一言入れてから本題へ", category:"依頼" },
+  { phrase:"I was wondering if ~", situation:"遠慮がちにお願いするとき", note:"I was wondering if you could help me.", category:"依頼" },
+  { phrase:"Would it be possible to ~?", situation:"フォーマルにお願いするとき", note:"ビジネスメールでもよく使う", category:"依頼" },
+
+  // ビジネス・フォーマル
+  { phrase:"I'll get back to you on that.", situation:"すぐに答えられないとき", note:"「後で確認して連絡します」", category:"ビジネス" },
+  { phrase:"Let me look into it.", situation:"調べてから回答すると伝えるとき", note:"「確認してみます」のプロな言い方", category:"ビジネス" },
+  { phrase:"Could you walk me through ~?", situation:"手順を説明してもらいたいとき", note:"Could you walk me through the process?", category:"ビジネス" },
+  { phrase:"Just to follow up on ~", situation:"前回の件を確認するとき", note:"メールの書き出しによく使う", category:"ビジネス" },
+  { phrase:"Let's circle back to ~", situation:"一度置いておいた話題に戻るとき", note:"「後でまた戻りましょう」", category:"ビジネス" },
+  { phrase:"I wanted to touch base about ~", situation:"軽く状況確認したいとき", note:"「〜についてちょっと確認したくて」", category:"ビジネス" },
+
+  // 頻度・時間
+  { phrase:"How often do you ~?", situation:"相手の習慣を聞くとき", note:"How often do you work out?", category:"頻度" },
+  { phrase:"How long does it take to ~?", situation:"所要時間を尋ねるとき", note:"How long does it take to get there?", category:"頻度" },
+  { phrase:"Every now and then", situation:"「たまに」と言いたいとき", note:"I still think about it every now and then.", category:"頻度" },
+  { phrase:"Once in a while", situation:"「時々」と言いたいとき", note:"Every now and then より少し頻度低め", category:"頻度" },
+  { phrase:"Sooner or later", situation:"「いつかは必ず」と言いたいとき", note:"Sooner or later you'll have to decide.", category:"頻度" },
+
+  // 強調・感情
+  { phrase:"It turned out that ~", situation:"結果がわかったとき", note:"It turned out that he was right.", category:"強調" },
+  { phrase:"The thing is, ~", situation:"核心を言い出すとき", note:"「実はね」「問題はね」のニュアンス", category:"強調" },
+  { phrase:"If only ~", situation:"叶わない願望を言うとき", note:"If only I had more time.", category:"強調" },
+  { phrase:"The last thing I want is ~", situation:"絶対にしたくないことを強調するとき", note:"The last thing I want is to cause trouble.", category:"強調" },
+  { phrase:"There's no way ~", situation:"「〜なんてありえない」と言うとき", note:"There's no way I'm doing that.", category:"強調" },
+  { phrase:"It's about time ~", situation:"「もうそろそろ〜していい頃だ」と言うとき", note:"It's about time we left.", category:"強調" },
+];
+
+// ── チャンク練習の状態 ──
+let chunkState={
+  phase:'card',    // 'card' | 'revealed' | 'done'
+  todayChunks:[],  // 今日の3フレーズ
+  ci:0,            // 現在のインデックス
+  repeatCount:0,   // このフレーズを何回リピートしたか
+  totalRepeats:0,  // セッション合計リピート数
+};
+
+function getTodayChunks(){
+  // 日付をシードにして毎日同じ3つが出る
+  const today=new Date().toISOString().slice(0,10);
+  const seed=today.split('-').reduce((a,b)=>a*100+parseInt(b),0);
+  const arr=[...CHUNKS];
+  // シード付きシャッフル（簡易版）
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor((seed*(i+1)*2654435761>>>0)%i);
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  return arr.slice(0,3);
+}
+
+function startChunkPractice(){
+  chunkState={
+    phase:'card',
+    todayChunks:getTodayChunks(),
+    ci:0,
+    repeatCount:0,
+    totalRepeats:0,
+  };
+  state.phase='chunk';
+  render();
+}
+
+function revealChunk(){
+  chunkState.phase='revealed';
+  const c=chunkState.todayChunks[chunkState.ci];
+  render();
+  // 表示と同時に音声再生
+  setTimeout(()=>speakChunk(c.phrase),300);
+}
+
+function speakChunk(phrase){
+  // ~の部分を除いて読む
+  const text=phrase.replace(/~/g,'something').replace(/\?/g,'');
+  speak(text,.75);
+}
+
+function repeatChunk(){
+  chunkState.repeatCount++;
+  chunkState.totalRepeats++;
+  const c=chunkState.todayChunks[chunkState.ci];
+  speakChunk(c.phrase);
+  // リピートカウントだけ更新（アニメーションなし）
+  const el=document.getElementById('repeat-count');
+  if(el)el.textContent=chunkState.repeatCount;
+}
+
+function nextChunk(){
+  if(chunkState.ci+1>=chunkState.todayChunks.length){
+    chunkState.phase='done';
+    state.phase='chunk';
+    render();
+  }else{
+    chunkState.ci++;
+    chunkState.repeatCount=0;
+    chunkState.phase='card';
+    render();
+  }
+}
+
+function renderChunk(app){
+  if(chunkState.phase==='done'){renderChunkDone(app);return}
+  const c=chunkState.todayChunks[chunkState.ci];
+  const total=chunkState.todayChunks.length;
+  const isRevealed=chunkState.phase==='revealed';
+
+  let h='<div class="wrap">';
+  // ヘッダー
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;margin-bottom:20px">';
+  h+='<button onclick="state.phase=\'start\';render()" style="background:rgba(255,255,255,.06);border:none;border-radius:8px;color:#888;padding:6px 10px;cursor:pointer;font-size:14px">←</button>';
+  h+='<span class="daily-badge">💬 今日のチャンク練習</span>';
+  h+=`<span style="font-size:13px;color:#6666aa"><strong style="color:#fbbf24;font-size:18px">${chunkState.ci+1}</strong>/${total}</span>`;
+  h+='</div>';
+  // プログレスバー
+  h+=`<div style="height:4px;background:rgba(255,255,255,.06);border-radius:2px;margin-bottom:28px;overflow:hidden"><div style="height:100%;width:${(chunkState.ci/total)*100}%;background:linear-gradient(90deg,#fbbf24,#f59e0b);border-radius:2px;transition:width .4s"></div></div>`;
+
+  h+='<div style="animation:slideUp .4s ease">';
+  // カテゴリ
+  h+=`<div style="text-align:center;margin-bottom:16px"><span style="font-size:11px;padding:3px 10px;border-radius:8px;background:rgba(251,191,36,.15);color:#fbbf24;font-weight:700">${c.category}</span></div>`;
+  // 状況説明
+  h+=`<div class="chunk-situation">🎬 <strong>${c.situation}</strong></div>`;
+
+  if(!isRevealed){
+    // 未表示状態：タップで表示
+    h+='<div style="text-align:center;padding:40px 20px">';
+    h+='<div style="font-size:48px;margin-bottom:16px">🤔</div>';
+    h+='<p style="color:#6666aa;font-size:14px;margin-bottom:24px">英語で何と言う？<br>頭の中で考えてみて</p>';
+    h+=`<button onclick="revealChunk()" style="padding:16px 40px;font-size:16px;font-weight:700;border:none;border-radius:16px;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#000;cursor:pointer;box-shadow:0 8px 24px rgba(251,191,36,.4)">表示する 👁</button>`;
+    h+='</div>';
+  }else{
+    // 表示後：チャンクとリピートボタン
+    h+='<div class="chunk-card">';
+    h+=`<div class="chunk-phrase">${c.phrase}</div>`;
+    h+=`<div class="chunk-note">${c.note}</div>`;
+    h+='</div>';
+    // リピートボタン
+    h+=`<button class="repeat-btn" onclick="repeatChunk()">`;
+    h+=`<span style="font-size:22px">🔊</span>`;
+    h+=`<span>もう一度声に出す</span>`;
+    h+=`<span style="font-size:12px;color:#a37b2c;min-width:24px" id="repeat-count">${chunkState.repeatCount}</span>`;
+    h+='</button>';
+    h+='<p style="text-align:center;font-size:12px;color:#555;margin:10px 0 20px">口に出すたびに体に染み込む。何回でも。</p>';
+    // 次へ
+    const isLast=chunkState.ci+1>=total;
+    h+=`<button onclick="nextChunk()" style="width:100%;padding:14px;font-size:15px;font-weight:700;border:none;border-radius:14px;cursor:pointer;color:#000;background:linear-gradient(135deg,#fbbf24,#f59e0b);box-shadow:0 4px 20px rgba(251,191,36,.35);margin-top:4px">${isLast?'今日の練習を完了 🏁':'次のチャンクへ →'}</button>`;
+  }
+  h+='</div></div>';
+  app.innerHTML=h;
+}
+
+function renderChunkDone(app){
+  const total=chunkState.totalRepeats;
+  let h='<div class="wrap" style="animation:slideUp .5s ease;text-align:center;padding-top:40px">';
+  h+='<div style="font-size:72px;margin-bottom:16px;animation:pop .5s ease">🎉</div>';
+  h+='<h2 style="font-size:26px;font-weight:800;margin-bottom:8px">今日の練習完了！</h2>';
+  h+=`<p style="color:#8888aa;font-size:14px;margin-bottom:32px">合計 <strong style="color:#fbbf24;font-size:20px">${total}</strong> 回口に出した。<br>これが積み重なって反射になる。</p>`;
+  // 今日やったチャンクの振り返り
+  h+='<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:32px;text-align:left">';
+  chunkState.todayChunks.forEach(c=>{
+    h+=`<div style="padding:14px 16px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);border-radius:14px">`;
+    h+=`<div style="font-size:16px;font-weight:700;color:#fde68a">${c.phrase}</div>`;
+    h+=`<div style="font-size:12px;color:#8888aa;margin-top:4px">${c.situation}</div>`;
+    h+='</div>';
+  });
+  h+='</div>';
+  h+='<div style="display:flex;flex-direction:column;gap:10px">';
+  h+='<button onclick="startChunkPractice()" style="padding:13px;font-size:14px;font-weight:700;border:none;border-radius:14px;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#000;cursor:pointer">🔄 もう一周する</button>';
+  h+='<button onclick="state.phase=\'start\';render()" style="padding:11px;font-size:13px;font-weight:600;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:transparent;color:#8888aa;cursor:pointer">トップに戻る</button>';
+  h+='</div></div>';
+  app.innerHTML=h;
+}
 const REACTIONS = {
   correct:["ナイス！🔥","完璧！✨","さすが！💪","その調子！🎯","バッチリ！👏"],
   wrong:["惜しい！😅","ドンマイ！💡","次いこう！🚀","覚えちゃおう！📝"],
@@ -589,6 +819,7 @@ function render(){
   else if(state.phase==='quiz')renderQuiz(app);
   else if(state.phase==='result')renderResult(app);
   else if(state.phase==='stats')renderStats(app);
+  else if(state.phase==='chunk')renderChunk(app);
   else renderStart(app);
 }
 
@@ -662,6 +893,14 @@ async function renderStart(app){
   }
   h+='</div>';
   h+='<button onclick="startQuiz(ALL_WORDS,null)" style="width:100%;padding:16px;font-size:16px;font-weight:700;border:2px dashed rgba(255,255,255,.15);border-radius:16px;background:rgba(255,255,255,.02);color:#aaa;cursor:pointer">🎲 全レベルMIX チャレンジ</button>';
+  // チャンク練習ボタン
+  h+='<div onclick="startChunkPractice()" style="margin-top:12px;cursor:pointer;display:flex;align-items:center;gap:16px;padding:18px 20px;border-radius:16px;background:rgba(251,191,36,.06);border:2px solid rgba(251,191,36,.25);position:relative;overflow:hidden;transition:all .25s">';
+  h+='<span style="font-size:32px;flex-shrink:0">💬</span>';
+  h+='<div style="flex:1">';
+  h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span style="font-size:18px;font-weight:800">チャンク練習</span>';
+  h+='<span style="font-size:11px;padding:2px 8px;border-radius:6px;background:rgba(251,191,36,.2);color:#fbbf24;font-weight:600">毎日3フレーズ</span></div>';
+  h+='<p style="margin:0;font-size:13px;color:#8888aa">口に馴染ませる。反射で出るまで繰り返す。</p>';
+  h+='</div><span style="font-size:20px;color:#555">→</span></div>';
   if(totalQ>0){
     h+='<button onclick="state.phase=\'stats\';renderStatsAsync()" style="width:100%;margin-top:10px;padding:12px;font-size:14px;font-weight:600;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:transparent;color:#8888aa;cursor:pointer">📊 学習記録を見る</button>';
   }
