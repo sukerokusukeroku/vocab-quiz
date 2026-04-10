@@ -67,6 +67,60 @@ auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
 
 const LEVELS = {
+  basic: {
+    label: "超基礎", emoji: "🍼", color: "#fb7185", desc: "中学必修！会話に絶対必要な単語",
+    words: [
+      // ── 動詞 ──
+      { word: "believe", meaning: "信じる", phonetic: "/bɪˈliːv/", example: "I believe you can do it.", exampleJa: "あなたならできると信じてるよ。" },
+      { word: "begin", meaning: "始まる、始める", phonetic: "/bɪˈɡɪn/", example: "The movie begins at seven.", exampleJa: "映画は7時に始まる。" },
+      { word: "arrive", meaning: "到着する", phonetic: "/əˈraɪv/", example: "We arrived at the station.", exampleJa: "駅に到着した。" },
+      { word: "leave", meaning: "出発する、去る", phonetic: "/liːv/", example: "I have to leave now.", exampleJa: "もう行かなきゃ。" },
+      { word: "forget", meaning: "忘れる", phonetic: "/fərˈɡet/", example: "Don't forget your umbrella.", exampleJa: "傘を忘れないでね。" },
+      { word: "remember", meaning: "覚えている、思い出す", phonetic: "/rɪˈmembər/", example: "I remember meeting you last year.", exampleJa: "去年あなたに会ったことを覚えている。" },
+      { word: "bring", meaning: "持ってくる", phonetic: "/brɪŋ/", example: "Can you bring me some water?", exampleJa: "水を持ってきてくれる？" },
+      { word: "carry", meaning: "運ぶ、持ち運ぶ", phonetic: "/ˈkæri/", example: "She carried the heavy bag.", exampleJa: "彼女は重いかばんを運んだ。" },
+      { word: "catch", meaning: "捕まえる、間に合う", phonetic: "/kætʃ/", example: "I need to catch the last train.", exampleJa: "終電に間に合わなきゃ。" },
+      { word: "lose", meaning: "失う、なくす", phonetic: "/luːz/", example: "I lost my keys again.", exampleJa: "また鍵をなくした。" },
+      { word: "spend", meaning: "費やす、過ごす", phonetic: "/spend/", example: "I spent the weekend reading.", exampleJa: "週末は読書して過ごした。" },
+      { word: "lend", meaning: "貸す", phonetic: "/lend/", example: "Could you lend me your charger?", exampleJa: "充電器を貸してくれない？" },
+      { word: "teach", meaning: "教える", phonetic: "/tiːtʃ/", example: "She teaches English at a school.", exampleJa: "彼女は学校で英語を教えている。" },
+      { word: "learn", meaning: "学ぶ、覚える", phonetic: "/lɜːrn/", example: "I want to learn how to cook.", exampleJa: "料理の仕方を学びたい。" },
+      { word: "receive", meaning: "受け取る", phonetic: "/rɪˈsiːv/", example: "I received your message.", exampleJa: "あなたのメッセージを受け取った。" },
+      { word: "return", meaning: "戻る、返す", phonetic: "/rɪˈtɜːrn/", example: "I'll return this book tomorrow.", exampleJa: "明日この本を返す。" },
+      { word: "follow", meaning: "ついていく、従う", phonetic: "/ˈfɑːloʊ/", example: "Follow me, I'll show you the way.", exampleJa: "ついてきて、道を案内するよ。" },
+      { word: "continue", meaning: "続ける、続く", phonetic: "/kənˈtɪnjuː/", example: "Please continue your story.", exampleJa: "話の続きをお願い。" },
+      { word: "belong", meaning: "属する、〜のものである", phonetic: "/bɪˈlɔːŋ/", example: "This bag belongs to me.", exampleJa: "このかばんは私のものです。" },
+      { word: "miss", meaning: "逃す、寂しく思う", phonetic: "/mɪs/", example: "I miss my family.", exampleJa: "家族が恋しい。" },
+      { word: "happen", meaning: "起こる", phonetic: "/ˈhæpən/", example: "What happened yesterday?", exampleJa: "昨日何があったの？" },
+      { word: "invite", meaning: "招待する", phonetic: "/ɪnˈvaɪt/", example: "I invited her to my party.", exampleJa: "彼女をパーティーに招待した。" },
+      { word: "mind", meaning: "気にする、嫌だと思う", phonetic: "/maɪnd/", example: "Do you mind if I sit here?", exampleJa: "ここに座ってもいいですか？" },
+      { word: "worry", meaning: "心配する", phonetic: "/ˈwɜːri/", example: "Don't worry about it.", exampleJa: "心配しないで。" },
+      // ── 名詞 ──
+      { word: "weather", meaning: "天気", phonetic: "/ˈweðər/", example: "How's the weather today?", exampleJa: "今日の天気はどう？" },
+      { word: "health", meaning: "健康", phonetic: "/helθ/", example: "Health is more important than money.", exampleJa: "健康はお金より大切だ。" },
+      { word: "neighbor", meaning: "近所の人、隣人", phonetic: "/ˈneɪbər/", example: "My neighbor is very friendly.", exampleJa: "うちの隣人はとても親切だ。" },
+      { word: "trouble", meaning: "困難、トラブル", phonetic: "/ˈtrʌbl/", example: "I'm in trouble with my homework.", exampleJa: "宿題で困っている。" },
+      { word: "attention", meaning: "注意、注目", phonetic: "/əˈtenʃən/", example: "Pay attention to the teacher.", exampleJa: "先生の話に注意を払って。" },
+      { word: "danger", meaning: "危険", phonetic: "/ˈdeɪndʒər/", example: "There's no danger here.", exampleJa: "ここに危険はないよ。" },
+      { word: "advice", meaning: "助言、アドバイス", phonetic: "/ədˈvaɪs/", example: "Can I give you some advice?", exampleJa: "アドバイスしてもいい？" },
+      { word: "society", meaning: "社会", phonetic: "/səˈsaɪəti/", example: "We live in a busy society.", exampleJa: "私たちは忙しい社会に住んでいる。" },
+      { word: "ability", meaning: "能力", phonetic: "/əˈbɪləti/", example: "She has the ability to lead.", exampleJa: "彼女にはリーダーシップの能力がある。" },
+      { word: "century", meaning: "世紀、100年", phonetic: "/ˈsentʃəri/", example: "We're in the 21st century.", exampleJa: "私たちは21世紀にいる。" },
+      { word: "fact", meaning: "事実", phonetic: "/fækt/", example: "That's a well-known fact.", exampleJa: "それはよく知られた事実だ。" },
+      // ── 形容詞 ──
+      { word: "afraid", meaning: "怖い、恐れている", phonetic: "/əˈfreɪd/", example: "I'm afraid of spiders.", exampleJa: "クモが怖い。" },
+      { word: "certain", meaning: "確かな、確信して", phonetic: "/ˈsɜːrtn/", example: "I'm certain he will come.", exampleJa: "彼が来ることは確かだ。" },
+      { word: "correct", meaning: "正しい", phonetic: "/kəˈrekt/", example: "Your answer is correct.", exampleJa: "あなたの答えは正しい。" },
+      { word: "possible", meaning: "可能な", phonetic: "/ˈpɑːsəbl/", example: "Is it possible to change the date?", exampleJa: "日程を変えることは可能？" },
+      { word: "impossible", meaning: "不可能な", phonetic: "/ɪmˈpɑːsəbl/", example: "Nothing is impossible.", exampleJa: "不可能なことはない。" },
+      { word: "necessary", meaning: "必要な", phonetic: "/ˈnesəseri/", example: "Sleep is necessary for health.", exampleJa: "睡眠は健康に必要だ。" },
+      { word: "surprised", meaning: "驚いた", phonetic: "/sərˈpraɪzd/", example: "I was surprised by the news.", exampleJa: "そのニュースに驚いた。" },
+      { word: "excited", meaning: "わくわくした", phonetic: "/ɪkˈsaɪtɪd/", example: "I'm so excited about the trip!", exampleJa: "旅行が楽しみでわくわくしている！" },
+      { word: "serious", meaning: "真剣な、深刻な", phonetic: "/ˈsɪriəs/", example: "Are you serious?", exampleJa: "本気で言ってる？" },
+      { word: "ordinary", meaning: "普通の、平凡な", phonetic: "/ˈɔːrdəneri/", example: "It was just an ordinary day.", exampleJa: "ただの普通の日だった。" },
+      { word: "ancient", meaning: "古代の", phonetic: "/ˈeɪnʃənt/", example: "We visited an ancient temple.", exampleJa: "古代の寺院を訪れた。" },
+    ],
+  },
   foundation: {
     label: "基礎", emoji: "🔤", color: "#f472b6", desc: "中学英語の必須単語！会話の土台",
     words: [
@@ -444,19 +498,26 @@ async function clearRecords(){
 }
 
 // ── State ──
-let state={phase:'start',level:null,questions:[],qi:0,selected:null,score:0,streak:0,showExample:false,history:[],mistakes:[],authMode:'login',authError:'',authLoading:false,userName:''};
+let state={phase:'start',level:null,questions:[],qi:0,selected:null,score:0,streak:0,showExample:false,history:[],mistakes:[],authMode:'login',authError:'',authLoading:false,userName:'',quizMode:'meaning'};
+// quizMode: 'meaning' = 日本語→英語, 'listening' = 英語音声→日本語
 
 function startQuiz(words,levelKey){
+  const mode=state.quizMode;
   const pool=shuffle(words).slice(0,10);
   const allPool=levelKey?LEVELS[levelKey].words:ALL_WORDS;
-  state={...state,phase:'quiz',level:levelKey,qi:0,selected:null,score:0,streak:0,showExample:false,history:[],mistakes:[],
-    questions:pool.map(w=>{
-      const others=shuffle(allPool.filter(x=>x.word!==w.word)).slice(0,3);
+  const qs=pool.map(w=>{
+    const others=shuffle(allPool.filter(x=>x.word!==w.word)).slice(0,3);
+    if(mode==='listening'){
       const options=shuffle([w,...others]);
       return{...w,options,correctIndex:options.findIndex(o=>o.word===w.word)};
-    })
-  };
+    }else{
+      const options=shuffle([w,...others]);
+      return{...w,options,correctIndex:options.findIndex(o=>o.word===w.word)};
+    }
+  });
+  state={...state,phase:'quiz',level:levelKey,qi:0,selected:null,score:0,streak:0,showExample:false,history:[],mistakes:[],questions:qs};
   render();
+  if(mode==='listening')setTimeout(()=>speak(qs[0].word,.75),400);
 }
 
 function handleSelect(idx){
@@ -480,6 +541,7 @@ async function nextQuestion(){
   }
   else state.qi++;
   render();
+  if(state.phase==='quiz'&&state.quizMode==='listening')setTimeout(()=>speak(state.questions[state.qi].word,.75),400);
 }
 
 // ── Auth ──
@@ -599,6 +661,14 @@ async function renderStart(app){
     h+='</div>';
   }
 
+  // quiz mode selector
+  h+='<div style="margin-bottom:20px">';
+  h+='<div style="font-size:13px;color:#8888aa;font-weight:600;margin-bottom:8px">出題モード</div>';
+  h+='<div style="display:flex;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.1)">';
+  h+=`<button onclick="state.quizMode='meaning';render()" style="flex:1;padding:12px 8px;font-size:13px;font-weight:700;border:none;cursor:pointer;${state.quizMode==='meaning'?'background:rgba(99,102,241,.2);color:#a78bfa':'background:transparent;color:#666'}"><span style="font-size:16px">🇯🇵</span><br>意味→英単語</button>`;
+  h+=`<button onclick="state.quizMode='listening';render()" style="flex:1;padding:12px 8px;font-size:13px;font-weight:700;border:none;cursor:pointer;${state.quizMode==='listening'?'background:rgba(99,102,241,.2);color:#a78bfa':'background:transparent;color:#666'}"><span style="font-size:16px">👂</span><br>リスニング→意味</button>`;
+  h+='</div></div>';
+
   h+='<div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px">';
   for(const[key,lv]of Object.entries(LEVELS)){
     h+=`<div class="lc" onclick="startQuiz(LEVELS['${key}'].words,'${key}')" style="border:2px solid ${lv.color}33">`;
@@ -629,18 +699,32 @@ function renderQuiz(app){
   h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-top:12px">';
   h+='<div style="display:flex;align-items:center;gap:10px">';
   h+='<button onclick="state.phase=\'start\';render()" style="background:rgba(255,255,255,.06);border:none;border-radius:8px;color:#888;padding:6px 10px;cursor:pointer;font-size:14px">←</button>';
-  h+=`<span style="font-size:12px;padding:3px 10px;border-radius:8px;background:${lvl?ac+'22':'rgba(255,255,255,.06)'};color:${lvl?ac:'#aaa'};font-weight:700">${lvl?lvl.emoji+' '+lvl.label:'🎲 MIX'}</span></div>`;
+  h+=`<span style="font-size:12px;padding:3px 10px;border-radius:8px;background:${lvl?ac+'22':'rgba(255,255,255,.06)'};color:${lvl?ac:'#aaa'};font-weight:700">${lvl?lvl.emoji+' '+lvl.label:'🎲 MIX'}</span>`;
+  h+=`<span style="font-size:11px;padding:2px 8px;border-radius:6px;background:rgba(255,255,255,.06);color:#888">${state.quizMode==='listening'?'👂リスニング':'🇯🇵意味'}</span></div>`;
   h+='<div style="display:flex;gap:10px;align-items:center">';
   h+=`<span style="font-size:13px;color:#6666aa"><strong style="color:#a78bfa;font-size:18px">${state.qi+1}</strong>/${state.questions.length}</span>`;
   if(state.streak>0)h+=`<span style="font-size:13px;color:#fbbf24;font-weight:600">🔥${state.streak}</span>`;
   h+=`<span style="font-size:14px;color:#64c8ff;font-weight:700">${state.score}点</span></div></div>`;
   h+=`<div style="height:4px;background:rgba(255,255,255,.06);border-radius:2px;margin-bottom:28px;overflow:hidden"><div style="height:100%;width:${(state.qi/state.questions.length)*100}%;background:linear-gradient(90deg,${ac},${ac}88);border-radius:2px;transition:width .4s"></div></div>`;
   h+='<div style="animation:slideUp .4s ease">';
-  h+='<div style="display:flex;gap:12px;margin-bottom:24px;align-items:flex-start">';
-  h+=`<div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,${ac},${ac}88);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🎓</div>`;
-  h+='<div style="background:rgba(255,255,255,.06);border-radius:4px 18px 18px 18px;padding:14px 18px;flex:1;border:1px solid rgba(255,255,255,.06)">';
-  h+='<p style="margin:0 0 10px;font-size:13px;color:#8888bb">この意味の英単語は？</p>';
-  h+=`<p style="margin:0;font-size:24px;font-weight:800;line-height:1.3">${q.meaning}</p></div></div>`;
+  const isListening=state.quizMode==='listening';
+  if(isListening){
+    // Listening mode: show speaker button
+    const we=q.word.replace(/'/g,"\\'");
+    h+='<div style="display:flex;gap:12px;margin-bottom:24px;align-items:flex-start">';
+    h+=`<div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,${ac},${ac}88);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">👂</div>`;
+    h+='<div style="background:rgba(255,255,255,.06);border-radius:4px 18px 18px 18px;padding:14px 18px;flex:1;border:1px solid rgba(255,255,255,.06)">';
+    h+='<p style="margin:0 0 12px;font-size:13px;color:#8888bb">聴こえた単語の意味は？</p>';
+    h+=`<button onclick="speak('${we}',.75)" style="padding:12px 24px;font-size:20px;border:2px solid rgba(99,102,241,.3);border-radius:14px;background:rgba(99,102,241,.1);cursor:pointer;transition:all .2s;color:#a78bfa;font-weight:700">🔊 もう一度聴く</button>`;
+    h+='</div></div>';
+  }else{
+    // Normal mode: show Japanese meaning
+    h+='<div style="display:flex;gap:12px;margin-bottom:24px;align-items:flex-start">';
+    h+=`<div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,${ac},${ac}88);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🎓</div>`;
+    h+='<div style="background:rgba(255,255,255,.06);border-radius:4px 18px 18px 18px;padding:14px 18px;flex:1;border:1px solid rgba(255,255,255,.06)">';
+    h+='<p style="margin:0 0 10px;font-size:13px;color:#8888bb">この意味の英単語は？</p>';
+    h+=`<p style="margin:0;font-size:24px;font-weight:800;line-height:1.3">${q.meaning}</p></div></div>`;
+  }
   h+='<div style="display:flex;flex-direction:column;gap:10px">';
   q.options.forEach((opt,i)=>{
     const isThis=ans===i,isAns=i===q.correctIndex;
@@ -650,9 +734,10 @@ function renderQuiz(app){
     const circBg=ans!==null&&isAns?'rgba(52,211,153,.3)':ans!==null&&isThis?'rgba(248,113,113,.3)':'rgba(255,255,255,.06)';
     const circCol=ans!==null&&isAns?'#34d399':ans!==null&&isThis?'#f87171':'#8888aa';
     const label=ans!==null?(isAns?'✓':isThis?'✗':String.fromCharCode(65+i)):String.fromCharCode(65+i);
+    const optLabel=isListening?opt.meaning:opt.word;
     h+=`<button class="ob ${ans!==null?'ad':''}" onclick="handleSelect(${i})" style="background:${bg};border-color:${bd};${am}">`;
     h+=`<span style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;background:${circBg};color:${circCol}">${label}</span>`;
-    h+=`<span>${opt.word}</span>`;
+    h+=`<span>${optLabel}</span>`;
     if(ans!==null&&isAns)h+=`<span class="sb" onclick="event.stopPropagation();speak('${opt.word}')" style="margin-left:auto;font-size:18px">🔊</span>`;
     h+='</button>';
   });
@@ -663,7 +748,7 @@ function renderQuiz(app){
     h+=`<div style="width:42px;height:42px;border-radius:50%;background:${isCorrect?'linear-gradient(135deg,#34d399,#22d3ee)':'linear-gradient(135deg,#f97316,#f87171)'};display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${isCorrect?'😄':'🤔'}</div>`;
     h+='<div style="background:rgba(255,255,255,.06);border-radius:4px 18px 18px 18px;padding:12px 16px;flex:1;border:1px solid rgba(255,255,255,.06)">';
     h+=`<p style="margin:0;font-size:15px;font-weight:700">${isCorrect?(streakMsg||pick(REACTIONS.correct)):pick(REACTIONS.wrong)}</p>`;
-    if(!isCorrect)h+=`<p style="margin:4px 0 0;font-size:13px;color:#aaa">正解は <strong style="color:#34d399">${q.word}</strong> だよ！</p>`;
+    if(!isCorrect)h+=`<p style="margin:4px 0 0;font-size:13px;color:#aaa">正解は <strong style="color:#34d399">${q.word}</strong>（${q.meaning}）だよ！</p>`;
     h+='</div></div>';
     const we=q.word.replace(/'/g,"\\'");
     h+=`<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;margin-bottom:10px;background:rgba(255,255,255,.04);border-radius:12px;border:1px solid rgba(255,255,255,.06)">`;
