@@ -45,7 +45,6 @@ button{font-family:inherit}
 <div id="app"><div class="wrap" style="text-align:center;padding-top:40vh"><div class="spinner"></div><p style="margin-top:12px;color:#666;font-size:13px">読み込み中...</p></div></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script>
 
@@ -59,9 +58,19 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
 const db = firebase.firestore();
-auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+// ── 独自認証ユーティリティ ──
+// パスワードをSHA-256でハッシュ化（平文保存しない）
+async function hashPass(pass){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pass));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+// ログイン状態をlocalStorageで管理
+const SESSION_KEY='vq_session';
+function getSession(){try{return JSON.parse(localStorage.getItem(SESSION_KEY)||'null')}catch{return null}}
+function setSession(userName){localStorage.setItem(SESSION_KEY,JSON.stringify({userName}))}
+function clearSession(){localStorage.removeItem(SESSION_KEY)}
 
 
 const LEVELS = {
@@ -452,18 +461,18 @@ speechSynthesis.getVoices();
 // ── Firestore記録管理 ──
 let cachedRecords=null;
 async function getRecords(){
-  const u=auth.currentUser;if(!u)return[];
+  const s=getSession();if(!s)return[];
   if(cachedRecords)return cachedRecords;
   try{
-    const snap=await db.collection('users').doc(u.uid).collection('records').orderBy('time','desc').get();
+    const snap=await db.collection('users').doc(s.userName).collection('records').orderBy('time','desc').get();
     cachedRecords=snap.docs.map(d=>d.data());
     return cachedRecords;
   }catch(e){console.error(e);return[]}
 }
 async function saveRecord(rec){
-  const u=auth.currentUser;if(!u)return;
+  const s=getSession();if(!s)return;
   try{
-    await db.collection('users').doc(u.uid).collection('records').add(rec);
+    await db.collection('users').doc(s.userName).collection('records').add(rec);
     cachedRecords=null;
   }catch(e){console.error(e)}
 }
@@ -484,8 +493,8 @@ async function getTodayCount(){const today=new Date().toISOString().slice(0,10);
 async function getTotalQuizzes(){return(await getRecords()).length}
 async function getBestScore(){const r=await getRecords();return r.length?Math.max(...r.map(x=>x.score)):0}
 async function clearRecords(){
-  const u=auth.currentUser;if(!u)return;
-  const snap=await db.collection('users').doc(u.uid).collection('records').get();
+  const s=getSession();if(!s)return;
+  const snap=await db.collection('users').doc(s.userName).collection('records').get();
   const batch=db.batch();snap.docs.forEach(d=>batch.delete(d.ref));
   await batch.commit();cachedRecords=null;
 }
@@ -531,48 +540,51 @@ async function nextQuestion(){
   if(state.phase==='quiz'&&state.quizMode==='listening')setTimeout(()=>speak(state.questions[state.qi].word,.75),400);
 }
 
-// ── Auth ──
+// ── 独自認証（ユーザー名 + 4桁PIN） ──
 async function doSignup(){
-  const name=$('auth-name')?.value.trim();
-  const email=$('auth-email')?.value.trim();
-  const pass=$('auth-pass')?.value;
-  if(!name){state.authError='名前を入力してください';render();return}
-  if(!email||!email.includes('@')){state.authError='メールアドレスを正しく入力してください';render();return}
-  if(!pass||pass.length<6){state.authError='パスワードは6文字以上にしてください';render();return}
+  const name=($('auth-name')?.value||'').trim();
+  const pin=($('auth-pin')?.value||'').trim();
+  if(!name||name.length<2){state.authError='ユーザー名は2文字以上にしてください';render();return}
+  if(!/^[a-zA-Z0-9ぁ-んァ-ン一-龯ー\-_]+$/.test(name)){state.authError='ユーザー名に使えない文字が含まれています';render();return}
+  if(!/^\d{4}$/.test(pin)){state.authError='PINは4桁の数字で入力してください';render();return}
   state.authLoading=true;state.authError='';render();
   try{
-    const cred=await auth.createUserWithEmailAndPassword(email,pass);
-    await cred.user.updateProfile({displayName:name});
-    await db.collection('users').doc(cred.user.uid).set({name,email,created:Date.now()});
+    const ref=db.collection('users').doc(name);
+    const snap=await ref.get();
+    if(snap.exists){state.authError='そのユーザー名はもう使われています';state.authLoading=false;render();return}
+    const hashed=await hashPass(pin);
+    await ref.set({name,passHash:hashed,created:Date.now()});
+    setSession(name);
     state.userName=name;state.phase='start';cachedRecords=null;
-  }catch(e){
-    state.authError=e.code==='auth/email-already-in-use'?'このメールアドレスは既に登録されています':e.code==='auth/weak-password'?'パスワードが弱すぎます（6文字以上）':e.code==='auth/invalid-email'?'メールアドレスの形式が正しくありません':'登録に失敗しました: '+e.message;
-  }
+  }catch(e){state.authError='登録に失敗しました: '+e.message}
   state.authLoading=false;render();
 }
 async function doLogin(){
-  const email=$('auth-email')?.value.trim();
-  const pass=$('auth-pass')?.value;
-  if(!email||!email.includes('@')){state.authError='メールアドレスを正しく入力してください';render();return}
-  if(!pass){state.authError='パスワードを入力してください';render();return}
+  const name=($('auth-name')?.value||'').trim();
+  const pin=($('auth-pin')?.value||'').trim();
+  if(!name){state.authError='ユーザー名を入力してください';render();return}
+  if(!/^\d{4}$/.test(pin)){state.authError='PINは4桁の数字で入力してください';render();return}
   state.authLoading=true;state.authError='';render();
   try{
-    const cred=await auth.signInWithEmailAndPassword(email,pass);
-    state.userName=cred.user.displayName||'';state.phase='start';cachedRecords=null;
-  }catch(e){
-    state.authError=e.code==='auth/user-not-found'?'このメールアドレスは登録されていません':e.code==='auth/wrong-password'||e.code==='auth/invalid-credential'?'パスワードが間違っています':'ログインに失敗しました: '+e.message;
-  }
+    const snap=await db.collection('users').doc(name).get();
+    if(!snap.exists){state.authError='そのユーザー名は登録されていません';state.authLoading=false;render();return}
+    const hashed=await hashPass(pin);
+    if(snap.data().passHash!==hashed){state.authError='PINが間違っています';state.authLoading=false;render();return}
+    setSession(name);
+    state.userName=name;state.phase='start';cachedRecords=null;
+  }catch(e){state.authError='ログインに失敗しました: '+e.message}
   state.authLoading=false;render();
 }
 async function doLogout(){
   if(!confirm('ログアウトしますか？'))return;
-  await auth.signOut();cachedRecords=null;state.phase='login';render();
+  clearSession();cachedRecords=null;state.userName='';state.phase='login';render();
 }
 
 function render(){
   const app=$('app');
-  const u=auth.currentUser;
-  if(!u){renderAuth(app);return}
+  const s=getSession();
+  if(!s){renderAuth(app);return}
+  state.userName=s.userName;
   if(state.phase==='start')renderStart(app);
   else if(state.phase==='quiz')renderQuiz(app);
   else if(state.phase==='result')renderResult(app);
@@ -586,31 +598,26 @@ function renderAuth(app){
   h+='<div style="text-align:center;padding-top:40px;margin-bottom:36px">';
   h+='<div style="font-size:56px;margin-bottom:16px;animation:float 3s ease-in-out infinite">📚</div>';
   h+='<h1 style="font-size:28px;font-weight:800;margin:0 0 8px;background:linear-gradient(135deg,#64c8ff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent">English Vocab Quiz</h1>';
-  h+=`<p style="font-size:14px;color:#7777aa;margin:0">${isSignup?'新規登録して学習を始めよう！':'おかえりなさい！ログインしよう'}</p></div>`;
+  h+=`<p style="font-size:14px;color:#7777aa;margin:0">${isSignup?'ユーザー名と4桁PINを決めるだけ！':'おかえり！ユーザー名とPINでログイン'}</p></div>`;
   h+='<div style="display:flex;margin-bottom:24px;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.1)">';
   h+=`<button onclick="state.authMode='login';state.authError='';render()" style="flex:1;padding:10px;font-size:14px;font-weight:700;border:none;cursor:pointer;${!isSignup?'background:rgba(99,102,241,.2);color:#a78bfa':'background:transparent;color:#666'}">ログイン</button>`;
   h+=`<button onclick="state.authMode='signup';state.authError='';render()" style="flex:1;padding:10px;font-size:14px;font-weight:700;border:none;cursor:pointer;${isSignup?'background:rgba(99,102,241,.2);color:#a78bfa':'background:transparent;color:#666'}">新規登録</button>`;
   h+='</div>';
   if(state.authError)h+=`<div class="err-msg">${state.authError}</div>`;
   h+='<div style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px">';
-  if(isSignup){
-    h+='<div><label style="font-size:13px;color:#8888aa;font-weight:600;display:block;margin-bottom:6px">名前</label>';
-    h+='<input id="auth-name" class="fi" type="text" placeholder="例：佑介"></div>';
-  }
-  h+='<div><label style="font-size:13px;color:#8888aa;font-weight:600;display:block;margin-bottom:6px">メールアドレス</label>';
-  h+='<input id="auth-email" class="fi" type="email" placeholder="you@example.com"></div>';
-  h+='<div><label style="font-size:13px;color:#8888aa;font-weight:600;display:block;margin-bottom:6px">パスワード</label>';
-  h+=`<input id="auth-pass" class="fi" type="password" placeholder="${isSignup?'6文字以上で設定':'パスワードを入力'}" onkeydown="if(event.key==='Enter')${isSignup?'doSignup()':'doLogin()'}"></div>`;
+  h+='<div><label style="font-size:13px;color:#8888aa;font-weight:600;display:block;margin-bottom:6px">ユーザー名</label>';
+  h+=`<input id="auth-name" class="fi" type="text" placeholder="${isSignup?'例：yusuke（英数字・日本語OK）':'登録したユーザー名'}" autocomplete="username"></div>`;
+  h+='<div><label style="font-size:13px;color:#8888aa;font-weight:600;display:block;margin-bottom:6px">PIN <span style="font-weight:400;color:#666">（4桁の数字）</span></label>';
+  h+=`<input id="auth-pin" class="fi" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="例：1234" style="font-size:24px;letter-spacing:.4em;text-align:center" onkeydown="if(event.key==='Enter')${isSignup?'doSignup()':'doLogin()'}"></div>`;
   h+='</div>';
   h+=`<button class="btn-primary" onclick="${isSignup?'doSignup()':'doLogin()'}" ${state.authLoading?'disabled':''}>${state.authLoading?'<span class="spinner"></span>':isSignup?'登録して始める 🚀':'ログイン 🚀'}</button>`;
-  h+='<p style="text-align:center;font-size:11px;color:#555;margin-top:16px;line-height:1.6">どの端末からでもログインすれば<br>学習記録がずっと引き継がれます 🔄</p>';
+  h+='<p style="text-align:center;font-size:11px;color:#555;margin-top:16px;line-height:1.6">同じユーザー名とPINでどの端末からでもログインできます 🔄</p>';
   h+='</div>';
   app.innerHTML=h;
 }
 
 async function renderStart(app){
-  const u=auth.currentUser;
-  const name=u?.displayName||state.userName||'';
+  const name=state.userName||getSession()?.userName||'';
   const [dayStreak,todayN,totalQ,bestScore]=await Promise.all([getStreak(),getTodayCount(),getTotalQuizzes(),getBestScore()]);
   let h='<div class="wrap" style="animation:slideUp .6s ease">';
   h+='<div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;margin-bottom:16px">';
@@ -848,12 +855,14 @@ function retryMistakes(){
   startQuiz([...m,...extra],state.level);
 }
 
-// ── Auth状態監視 ──
-auth.onAuthStateChanged(u=>{
-  if(u){state.userName=u.displayName||'';state.phase='start'}
+// ── 起動時の認証チェック ──
+(function init(){
+  const s=getSession();
+  if(s){state.userName=s.userName;state.phase='start'}
   else{state.phase='login'}
   render();
-});
+})();
+
 </script>
 </body>
 </html>
