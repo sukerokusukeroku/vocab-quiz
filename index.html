@@ -16,6 +16,7 @@ body{min-height:100vh;background:linear-gradient(145deg,#0a0a1a,#1a1a3e 50%,#0d0
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
 @keyframes glow{0%,100%{text-shadow:0 0 10px rgba(251,191,36,.3)}50%{text-shadow:0 0 25px rgba(251,191,36,.6)}}
 @keyframes spin{to{transform:rotate(360deg)}}
+@keyframes spellin{0%{opacity:0;transform:scale(.7) translateY(-10px)}60%{transform:scale(1.08) translateY(2px)}100%{opacity:1;transform:scale(1) translateY(0)}}
 .ob{transition:all .2s;cursor:pointer;border:2px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:14px;color:#e8e8f0;font-size:17px;font-weight:600;text-align:left;width:100%}
 .ob:hover:not(.ad){transform:translateY(-2px);border-color:rgba(100,200,255,.4);background:rgba(100,200,255,.08)!important}
 .ob.ad{cursor:default}
@@ -35,6 +36,9 @@ button{font-family:inherit}
 .btn-primary:disabled{opacity:.5;cursor:wait}
 .err-msg{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);border-radius:10px;padding:10px 14px;font-size:13px;color:#f87171;margin-bottom:14px;text-align:center}
 .spinner{display:inline-block;width:20px;height:20px;border:3px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+.spelling-reveal{animation:spellin .5s cubic-bezier(.34,1.56,.64,1) both;background:linear-gradient(135deg,rgba(99,102,241,.15),rgba(139,92,246,.08));border:2px solid rgba(99,102,241,.4);border-radius:16px;padding:16px 20px;margin:12px 0;text-align:center}
+.spelling-word{font-size:2rem;font-weight:800;letter-spacing:.05em;color:#a5b4fc;margin-bottom:4px}
+.spelling-phonetic{font-size:.95rem;color:#7777aa;font-style:italic}
 </style>
 </head>
 <body>
@@ -45,9 +49,6 @@ button{font-family:inherit}
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script>
 
-// ╔══════════════════════════════════════════╗
-// ║  ↓↓↓ ここにFirebaseの設定を貼る ↓↓↓   ║
-// ╚══════════════════════════════════════════╝
 const firebaseConfig = {
   apiKey: "AIzaSyBT5dmOz4Wp_0IBVJp_JDhxusl-w-7Jujs",
   authDomain: "vocab-quiz-acf6f.firebaseapp.com",
@@ -56,9 +57,6 @@ const firebaseConfig = {
   messagingSenderId: "41205086482",
   appId: "1:41205086482:web:d5b9f655db7dfd713a9bcb"
 };
-// ╔══════════════════════════════════════════╗
-// ║  ↑↑↑ ここまで ↑↑↑                      ║
-// ╚══════════════════════════════════════════╝
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
@@ -70,7 +68,6 @@ const LEVELS = {
   basic: {
     label: "超基礎", emoji: "🍼", color: "#fb7185", desc: "中学必修！会話に絶対必要な単語",
     words: [
-      // ── 動詞 ──
       { word: "believe", meaning: "信じる", phonetic: "/bɪˈliːv/", example: "I believe you can do it.", exampleJa: "あなたならできると信じてるよ。" },
       { word: "begin", meaning: "始まる、始める", phonetic: "/bɪˈɡɪn/", example: "The movie begins at seven.", exampleJa: "映画は7時に始まる。" },
       { word: "arrive", meaning: "到着する", phonetic: "/əˈraɪv/", example: "We arrived at the station.", exampleJa: "駅に到着した。" },
@@ -95,7 +92,6 @@ const LEVELS = {
       { word: "invite", meaning: "招待する", phonetic: "/ɪnˈvaɪt/", example: "I invited her to my party.", exampleJa: "彼女をパーティーに招待した。" },
       { word: "mind", meaning: "気にする、嫌だと思う", phonetic: "/maɪnd/", example: "Do you mind if I sit here?", exampleJa: "ここに座ってもいいですか？" },
       { word: "worry", meaning: "心配する", phonetic: "/ˈwɜːri/", example: "Don't worry about it.", exampleJa: "心配しないで。" },
-      // ── 名詞 ──
       { word: "weather", meaning: "天気", phonetic: "/ˈweðər/", example: "How's the weather today?", exampleJa: "今日の天気はどう？" },
       { word: "health", meaning: "健康", phonetic: "/helθ/", example: "Health is more important than money.", exampleJa: "健康はお金より大切だ。" },
       { word: "neighbor", meaning: "近所の人、隣人", phonetic: "/ˈneɪbər/", example: "My neighbor is very friendly.", exampleJa: "うちの隣人はとても親切だ。" },
@@ -107,7 +103,6 @@ const LEVELS = {
       { word: "ability", meaning: "能力", phonetic: "/əˈbɪləti/", example: "She has the ability to lead.", exampleJa: "彼女にはリーダーシップの能力がある。" },
       { word: "century", meaning: "世紀、100年", phonetic: "/ˈsentʃəri/", example: "We're in the 21st century.", exampleJa: "私たちは21世紀にいる。" },
       { word: "fact", meaning: "事実", phonetic: "/fækt/", example: "That's a well-known fact.", exampleJa: "それはよく知られた事実だ。" },
-      // ── 形容詞 ──
       { word: "afraid", meaning: "怖い、恐れている", phonetic: "/əˈfreɪd/", example: "I'm afraid of spiders.", exampleJa: "クモが怖い。" },
       { word: "certain", meaning: "確かな、確信して", phonetic: "/ˈsɜːrtn/", example: "I'm certain he will come.", exampleJa: "彼が来ることは確かだ。" },
       { word: "correct", meaning: "正しい", phonetic: "/kəˈrekt/", example: "Your answer is correct.", exampleJa: "あなたの答えは正しい。" },
@@ -124,7 +119,6 @@ const LEVELS = {
   foundation: {
     label: "基礎", emoji: "🔤", color: "#f472b6", desc: "中学英語の必須単語！会話の土台",
     words: [
-      // ── 動詞 ──
       { word: "explain", meaning: "説明する", phonetic: "/ɪkˈspleɪn/", example: "Can you explain this to me?", exampleJa: "これを私に説明してくれる？" },
       { word: "agree", meaning: "同意する、賛成する", phonetic: "/əˈɡriː/", example: "I agree with you.", exampleJa: "あなたに賛成です。" },
       { word: "refuse", meaning: "断る、拒否する", phonetic: "/rɪˈfjuːz/", example: "She refused to answer the question.", exampleJa: "彼女は質問に答えることを拒否した。" },
@@ -143,7 +137,6 @@ const LEVELS = {
       { word: "provide", meaning: "提供する", phonetic: "/prəˈvaɪd/", example: "The hotel provides free Wi-Fi.", exampleJa: "ホテルは無料Wi-Fiを提供している。" },
       { word: "wonder", meaning: "〜かなと思う、不思議に思う", phonetic: "/ˈwʌndər/", example: "I wonder why he didn't come.", exampleJa: "なぜ彼が来なかったのかなと思う。" },
       { word: "suggest", meaning: "提案する", phonetic: "/səˈdʒest/", example: "I suggest we leave early.", exampleJa: "早めに出発することを提案する。" },
-      // ── 名詞 ──
       { word: "experience", meaning: "経験、体験", phonetic: "/ɪkˈspɪriəns/", example: "It was an amazing experience.", exampleJa: "素晴らしい体験だった。" },
       { word: "difference", meaning: "違い、差", phonetic: "/ˈdɪfərəns/", example: "What's the difference between these two?", exampleJa: "この2つの違いは何？" },
       { word: "reason", meaning: "理由", phonetic: "/ˈriːzn/", example: "What's the reason for the delay?", exampleJa: "遅れた理由は何？" },
@@ -160,7 +153,6 @@ const LEVELS = {
       { word: "success", meaning: "成功", phonetic: "/səkˈses/", example: "Hard work is the key to success.", exampleJa: "努力が成功の鍵だ。" },
       { word: "accident", meaning: "事故、偶然", phonetic: "/ˈæksɪdənt/", example: "There was a car accident on the highway.", exampleJa: "高速道路で車の事故があった。" },
       { word: "patient", meaning: "忍耐強い、患者", phonetic: "/ˈpeɪʃənt/", example: "Please be patient — it takes time.", exampleJa: "辛抱してください、時間がかかります。" },
-      // ── 形容詞 ──
       { word: "honest", meaning: "正直な", phonetic: "/ˈɑːnɪst/", example: "To be honest, I don't like it.", exampleJa: "正直に言うと、好きじゃない。" },
       { word: "polite", meaning: "礼儀正しい", phonetic: "/pəˈlaɪt/", example: "He is always polite to everyone.", exampleJa: "彼はいつも誰にでも礼儀正しい。" },
       { word: "rude", meaning: "失礼な、無礼な", phonetic: "/ruːd/", example: "It's rude to talk with your mouth full.", exampleJa: "口に物を入れて話すのは失礼だ。" },
@@ -421,6 +413,7 @@ const LEVELS = {
   },
 };
 
+
 const ALL_WORDS = Object.values(LEVELS).flatMap(l => l.words);
 const REACTIONS = {
   correct:["ナイス！🔥","完璧！✨","さすが！💪","その調子！🎯","バッチリ！👏"],
@@ -499,7 +492,6 @@ async function clearRecords(){
 
 // ── State ──
 let state={phase:'start',level:null,questions:[],qi:0,selected:null,score:0,streak:0,showExample:false,history:[],mistakes:[],authMode:'login',authError:'',authLoading:false,userName:'',quizMode:'meaning'};
-// quizMode: 'meaning' = 日本語→英語, 'listening' = 英語音声→日本語
 
 function startQuiz(words,levelKey){
   const mode=state.quizMode;
@@ -507,13 +499,8 @@ function startQuiz(words,levelKey){
   const allPool=levelKey?LEVELS[levelKey].words:ALL_WORDS;
   const qs=pool.map(w=>{
     const others=shuffle(allPool.filter(x=>x.word!==w.word)).slice(0,3);
-    if(mode==='listening'){
-      const options=shuffle([w,...others]);
-      return{...w,options,correctIndex:options.findIndex(o=>o.word===w.word)};
-    }else{
-      const options=shuffle([w,...others]);
-      return{...w,options,correctIndex:options.findIndex(o=>o.word===w.word)};
-    }
+    const options=shuffle([w,...others]);
+    return{...w,options,correctIndex:options.findIndex(o=>o.word===w.word)};
   });
   state={...state,phase:'quiz',level:levelKey,qi:0,selected:null,score:0,streak:0,showExample:false,history:[],mistakes:[],questions:qs};
   render();
@@ -600,15 +587,11 @@ function renderAuth(app){
   h+='<div style="font-size:56px;margin-bottom:16px;animation:float 3s ease-in-out infinite">📚</div>';
   h+='<h1 style="font-size:28px;font-weight:800;margin:0 0 8px;background:linear-gradient(135deg,#64c8ff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent">English Vocab Quiz</h1>';
   h+=`<p style="font-size:14px;color:#7777aa;margin:0">${isSignup?'新規登録して学習を始めよう！':'おかえりなさい！ログインしよう'}</p></div>`;
-
-  // tab
   h+='<div style="display:flex;margin-bottom:24px;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.1)">';
   h+=`<button onclick="state.authMode='login';state.authError='';render()" style="flex:1;padding:10px;font-size:14px;font-weight:700;border:none;cursor:pointer;${!isSignup?'background:rgba(99,102,241,.2);color:#a78bfa':'background:transparent;color:#666'}">ログイン</button>`;
   h+=`<button onclick="state.authMode='signup';state.authError='';render()" style="flex:1;padding:10px;font-size:14px;font-weight:700;border:none;cursor:pointer;${isSignup?'background:rgba(99,102,241,.2);color:#a78bfa':'background:transparent;color:#666'}">新規登録</button>`;
   h+='</div>';
-
   if(state.authError)h+=`<div class="err-msg">${state.authError}</div>`;
-
   h+='<div style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px">';
   if(isSignup){
     h+='<div><label style="font-size:13px;color:#8888aa;font-weight:600;display:block;margin-bottom:6px">名前</label>';
@@ -619,9 +602,7 @@ function renderAuth(app){
   h+='<div><label style="font-size:13px;color:#8888aa;font-weight:600;display:block;margin-bottom:6px">パスワード</label>';
   h+=`<input id="auth-pass" class="fi" type="password" placeholder="${isSignup?'6文字以上で設定':'パスワードを入力'}" onkeydown="if(event.key==='Enter')${isSignup?'doSignup()':'doLogin()'}"></div>`;
   h+='</div>';
-
   h+=`<button class="btn-primary" onclick="${isSignup?'doSignup()':'doLogin()'}" ${state.authLoading?'disabled':''}>${state.authLoading?'<span class="spinner"></span>':isSignup?'登録して始める 🚀':'ログイン 🚀'}</button>`;
-
   h+='<p style="text-align:center;font-size:11px;color:#555;margin-top:16px;line-height:1.6">どの端末からでもログインすれば<br>学習記録がずっと引き継がれます 🔄</p>';
   h+='</div>';
   app.innerHTML=h;
@@ -631,18 +612,15 @@ async function renderStart(app){
   const u=auth.currentUser;
   const name=u?.displayName||state.userName||'';
   const [dayStreak,todayN,totalQ,bestScore]=await Promise.all([getStreak(),getTodayCount(),getTotalQuizzes(),getBestScore()]);
-
   let h='<div class="wrap" style="animation:slideUp .6s ease">';
   h+='<div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;margin-bottom:16px">';
   h+=`<div style="display:flex;align-items:center;gap:8px"><div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff">${(name||'?')[0]}</div>`;
   h+=`<span style="font-size:14px;font-weight:700">${name}</span></div>`;
   h+='<button onclick="doLogout()" style="font-size:11px;padding:4px 10px;border:1px solid rgba(255,255,255,.1);border-radius:8px;background:transparent;color:#666;cursor:pointer">ログアウト</button></div>';
-
   h+='<div style="text-align:center;margin-bottom:20px">';
   h+='<div style="font-size:56px;margin-bottom:12px;animation:float 3s ease-in-out infinite">📚</div>';
   h+='<h1 style="font-size:28px;font-weight:800;margin:0 0 6px;background:linear-gradient(135deg,#64c8ff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent">English Vocab Quiz</h1>';
   h+=`<p style="font-size:14px;color:#7777aa;margin:0">${name}さん、今日もやっていこう！</p></div>`;
-
   if(totalQ>0){
     h+='<div class="streak-banner">';
     if(dayStreak>0){
@@ -660,15 +638,12 @@ async function renderStart(app){
     h+=`<div class="stat-card"><div style="font-size:22px;font-weight:800;color:#34d399">${bestScore}</div><div style="font-size:11px;color:#8888aa">最高点</div></div>`;
     h+='</div>';
   }
-
-  // quiz mode selector
   h+='<div style="margin-bottom:20px">';
   h+='<div style="font-size:13px;color:#8888aa;font-weight:600;margin-bottom:8px">出題モード</div>';
   h+='<div style="display:flex;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.1)">';
   h+=`<button onclick="state.quizMode='meaning';render()" style="flex:1;padding:12px 8px;font-size:13px;font-weight:700;border:none;cursor:pointer;${state.quizMode==='meaning'?'background:rgba(99,102,241,.2);color:#a78bfa':'background:transparent;color:#666'}"><span style="font-size:16px">🇯🇵</span><br>意味→英単語</button>`;
   h+=`<button onclick="state.quizMode='listening';render()" style="flex:1;padding:12px 8px;font-size:13px;font-weight:700;border:none;cursor:pointer;${state.quizMode==='listening'?'background:rgba(99,102,241,.2);color:#a78bfa':'background:transparent;color:#666'}"><span style="font-size:16px">👂</span><br>リスニング→意味</button>`;
   h+='</div></div>';
-
   h+='<div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px">';
   for(const[key,lv]of Object.entries(LEVELS)){
     h+=`<div class="lc" onclick="startQuiz(LEVELS['${key}'].words,'${key}')" style="border:2px solid ${lv.color}33">`;
@@ -687,6 +662,7 @@ async function renderStart(app){
   app.innerHTML=h;
 }
 
+// ── ★ここが今回の改修ポイント：renderQuiz ──
 function renderQuiz(app){
   const q=state.questions[state.qi];
   const lvl=state.level?LEVELS[state.level]:null;
@@ -707,9 +683,10 @@ function renderQuiz(app){
   h+=`<span style="font-size:14px;color:#64c8ff;font-weight:700">${state.score}点</span></div></div>`;
   h+=`<div style="height:4px;background:rgba(255,255,255,.06);border-radius:2px;margin-bottom:28px;overflow:hidden"><div style="height:100%;width:${(state.qi/state.questions.length)*100}%;background:linear-gradient(90deg,${ac},${ac}88);border-radius:2px;transition:width .4s"></div></div>`;
   h+='<div style="animation:slideUp .4s ease">';
+
   const isListening=state.quizMode==='listening';
   if(isListening){
-    // Listening mode: show speaker button
+    // リスニングモード：音声ボタンを表示
     const we=q.word.replace(/'/g,"\\'");
     h+='<div style="display:flex;gap:12px;margin-bottom:24px;align-items:flex-start">';
     h+=`<div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,${ac},${ac}88);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">👂</div>`;
@@ -717,14 +694,24 @@ function renderQuiz(app){
     h+='<p style="margin:0 0 12px;font-size:13px;color:#8888bb">聴こえた単語の意味は？</p>';
     h+=`<button onclick="speak('${we}',.75)" style="padding:12px 24px;font-size:20px;border:2px solid rgba(99,102,241,.3);border-radius:14px;background:rgba(99,102,241,.1);cursor:pointer;transition:all .2s;color:#a78bfa;font-weight:700">🔊 もう一度聴く</button>`;
     h+='</div></div>';
+
+    // ★ 回答後にスペル（英単語）を表示する
+    if(ans!==null){
+      h+=`<div class="spelling-reveal">`;
+      h+=`<div class="spelling-word">${q.word}</div>`;
+      h+=`<div class="spelling-phonetic">${q.phonetic}</div>`;
+      h+=`</div>`;
+    }
   }else{
-    // Normal mode: show Japanese meaning
+    // 通常モード：日本語の意味を表示
     h+='<div style="display:flex;gap:12px;margin-bottom:24px;align-items:flex-start">';
     h+=`<div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,${ac},${ac}88);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🎓</div>`;
     h+='<div style="background:rgba(255,255,255,.06);border-radius:4px 18px 18px 18px;padding:14px 18px;flex:1;border:1px solid rgba(255,255,255,.06)">';
     h+='<p style="margin:0 0 10px;font-size:13px;color:#8888bb">この意味の英単語は？</p>';
     h+=`<p style="margin:0;font-size:24px;font-weight:800;line-height:1.3">${q.meaning}</p></div></div>`;
   }
+
+  // 選択肢
   h+='<div style="display:flex;flex-direction:column;gap:10px">';
   q.options.forEach((opt,i)=>{
     const isThis=ans===i,isAns=i===q.correctIndex;
@@ -734,6 +721,7 @@ function renderQuiz(app){
     const circBg=ans!==null&&isAns?'rgba(52,211,153,.3)':ans!==null&&isThis?'rgba(248,113,113,.3)':'rgba(255,255,255,.06)';
     const circCol=ans!==null&&isAns?'#34d399':ans!==null&&isThis?'#f87171':'#8888aa';
     const label=ans!==null?(isAns?'✓':isThis?'✗':String.fromCharCode(65+i)):String.fromCharCode(65+i);
+    // リスニングモードは日本語の意味を選択肢に表示、通常モードは英単語
     const optLabel=isListening?opt.meaning:opt.word;
     h+=`<button class="ob ${ans!==null?'ad':''}" onclick="handleSelect(${i})" style="background:${bg};border-color:${bd};${am}">`;
     h+=`<span style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;background:${circBg};color:${circCol}">${label}</span>`;
@@ -742,6 +730,8 @@ function renderQuiz(app){
     h+='</button>';
   });
   h+='</div>';
+
+  // 回答後フィードバック
   if(ans!==null){
     h+='<div style="animation:pop .3s ease;margin-top:18px">';
     h+='<div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:14px">';
@@ -776,7 +766,6 @@ async function renderResult(app){
   const lvl=state.level?LEVELS[state.level]:null;
   const ac=lvl?.color||'#6366f1';
   const dayStreak=await getStreak();
-
   let h='<div class="wrap" style="animation:slideUp .5s ease">';
   h+='<div style="text-align:center;margin-bottom:24px;padding-top:24px">';
   h+=`<div style="font-size:64px;margin-bottom:8px;animation:pop .5s ease">${state.score>=9?'🏆':state.score>=7?'🎉':state.score>=5?'👍':'💪'}</div>`;
@@ -785,14 +774,12 @@ async function renderResult(app){
   h+=`<div style="display:inline-flex;align-items:baseline;gap:4px;background:rgba(99,102,241,.15);padding:10px 24px;border-radius:14px">`;
   h+=`<span style="font-size:42px;font-weight:800;color:${ac}">${state.score}</span>`;
   h+=`<span style="font-size:18px;color:#6666aa">/ ${state.questions.length}</span></div></div>`;
-
   if(dayStreak>0){
     h+='<div class="streak-banner">';
     h+=`<div style="font-size:15px;color:#fbbf24;font-weight:800;margin-bottom:6px">🔥 ${dayStreak}日連続！</div>`;
     h+=`<div style="font-size:13px;color:#ddd;line-height:1.5">${getStreakMsg(dayStreak)}</div>`;
     h+='</div>';
   }
-
   h+='<h3 style="font-size:14px;color:#8888aa;margin-bottom:10px;font-weight:600">📋 回答一覧</h3>';
   h+='<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:24px">';
   state.history.forEach(item=>{
@@ -821,12 +808,10 @@ async function renderStatsAsync(){
   const avgScore=totalQ?Math.round(records.reduce((s,r)=>s+r.score,0)/totalQ*10)/10:0;
   const byDate={};
   records.forEach(r=>{if(!byDate[r.date])byDate[r.date]=[];byDate[r.date].push(r)});
-
   let h='<div class="wrap" style="animation:slideUp .5s ease">';
   h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:24px;padding-top:12px">';
   h+='<button onclick="state.phase=\'start\';render()" style="background:rgba(255,255,255,.06);border:none;border-radius:8px;color:#888;padding:6px 10px;cursor:pointer;font-size:14px">←</button>';
   h+='<h2 style="font-size:20px;font-weight:800">📊 学習記録</h2></div>';
-
   h+='<div style="display:flex;gap:8px;margin-bottom:24px">';
   h+=`<div class="stat-card"><div style="font-size:24px;font-weight:800;color:#fbbf24">${dayStreak}</div><div style="font-size:11px;color:#8888aa;margin-top:2px">連続日数</div></div>`;
   h+=`<div class="stat-card"><div style="font-size:24px;font-weight:800;color:#a78bfa">${totalQ}</div><div style="font-size:11px;color:#8888aa;margin-top:2px">累計回数</div></div>`;
