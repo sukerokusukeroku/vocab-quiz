@@ -865,10 +865,11 @@ function repeatChunk(){
   if(el)el.textContent=chunkState.repeatCount;
 }
 
-function nextChunk(){
+async function nextChunk(){
   if(chunkState.ci+1>=chunkState.todayChunks.length){
     chunkState.phase='done';
     state.phase='chunk';
+    await saveRecord({date:new Date().toISOString().slice(0,10),level:'チャンク',score:chunkState.totalRepeats,total:chunkState.todayChunks.length,time:Date.now()});
     render();
   }else{
     chunkState.ci++;
