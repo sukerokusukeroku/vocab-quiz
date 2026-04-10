@@ -43,8 +43,13 @@ button{font-family:inherit}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.4)}70%{box-shadow:0 0 0 10px rgba(251,191,36,0)}}
 .chunk-card{animation:chunkIn .4s cubic-bezier(.22,1,.36,1) both;background:linear-gradient(135deg,rgba(251,191,36,.12),rgba(245,158,11,.06));border:2px solid rgba(251,191,36,.35);border-radius:20px;padding:28px 24px;text-align:center;margin-bottom:20px}
 .chunk-phrase{font-size:1.65rem;font-weight:800;color:#fde68a;letter-spacing:.02em;line-height:1.3;margin-bottom:8px}
-.chunk-note{font-size:.85rem;color:#a37b2c;font-style:italic}
-.chunk-situation{background:rgba(255,255,255,.05);border-radius:12px;padding:12px 16px;margin-bottom:20px;font-size:15px;color:#c4c4dd;line-height:1.5;border:1px solid rgba(255,255,255,.07)}
+.chunk-example{font-size:1rem;color:#d4c48a;font-style:italic;margin-top:4px}
+.chunk-example-ja{font-size:.85rem;color:#a37b2c;margin-top:4px}
+.chunk-situation{background:rgba(255,255,255,.05);border-radius:12px;padding:12px 16px;margin-bottom:12px;font-size:15px;color:#c4c4dd;line-height:1.5;border:1px solid rgba(255,255,255,.07)}
+.chunk-dialogue{background:rgba(255,255,255,.03);border-radius:12px;padding:12px 16px;margin-bottom:12px;font-size:15px;color:#b8b8d0;line-height:1.8;border:1px solid rgba(255,255,255,.06);font-family:'Courier New',monospace}
+.chunk-japanese{background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(139,92,246,.05));border-radius:12px;padding:14px 16px;margin-bottom:20px;font-size:16px;color:#c4b5fd;line-height:1.5;border:1px solid rgba(99,102,241,.2);text-align:center;font-weight:600}
+.chunk-detail{background:rgba(255,255,255,.03);border-radius:12px;padding:12px 16px;margin-bottom:10px;font-size:14px;color:#b0b0cc;line-height:1.7;border:1px solid rgba(255,255,255,.06)}
+.chunk-detail-title{font-size:13px;font-weight:700;color:#8888bb;margin-bottom:6px}
 .repeat-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;font-size:15px;font-weight:700;border:2px solid rgba(251,191,36,.3);border-radius:14px;background:rgba(251,191,36,.08);color:#fbbf24;cursor:pointer;transition:all .2s}
 .repeat-btn:active{transform:scale(.97);background:rgba(251,191,36,.15)}
 .daily-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.3);color:#34d399}
@@ -70,12 +75,10 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 // ── 独自認証ユーティリティ ──
-// パスワードをSHA-256でハッシュ化（平文保存しない）
 async function hashPass(pass){
   const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pass));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
-// ログイン状態をlocalStorageで管理
 const SESSION_KEY='vq_session';
 function getSession(){try{return JSON.parse(localStorage.getItem(SESSION_KEY)||'null')}catch{return null}}
 function setSession(userName){localStorage.setItem(SESSION_KEY,JSON.stringify({userName}))}
@@ -434,397 +437,394 @@ const LEVELS = {
 
 const ALL_WORDS = Object.values(LEVELS).flatMap(l => l.words);
 
-// ── チャンクデータ（日常会話30フレーズ）──
+// ── チャンクデータ（日常会話30フレーズ・新構造） ──
 const CHUNKS = [
-
-  // ── 同意・反応 ──
+  // ── 同意・反応（5） ──
   {
     phrase: "That makes sense.",
-    situation: "友人が「電車が遅れたから遅刻した」と説明してきたとき",
-    dialogue: "A: The train was delayed, so I missed the meeting.\nB: ___",
-    japanese: "「なるほど、それは仕方ないね」って言いたい",
-    nuance: "単なる「わかった」ではなく、「話の筋が通ってる、納得できる」というニュアンス。相手の説明や理由を論理的に受け入れるときに使う。I understand より一歩踏み込んだ共感がある。",
-    caution: "感情的な共感には向かない。「辛かったね」のような場面では That's tough. や I'm sorry to hear that. の方が自然。",
-    similar: "I see. → 「なるほど」（軽い相槌）\nI understand. → 「理解した」（やや事務的）\nThat makes sense. → 「筋が通ってる、納得」（一番温かみがある）",
-    example: "A: I didn't sleep well, so I can't focus today.\nB: That makes sense. Take it easy.",
-    exampleJa: "A: よく眠れなかったから今日は集中できなくて。\nB: それは仕方ないね。無理しないで。",
+    situation: "同僚がプロジェクトの遅延理由を説明してくれた",
+    dialogue: "A: We had to push the deadline because the client changed the spec.\nB: ___",
+    japanese: "「なるほど、それなら納得だわ」って言いたい",
+    nuance: "「理解した」だけじゃなく「筋が通ってる、納得」のニュアンス。I understand. より一歩踏み込んだ共感。",
+    caution: "相手の意見に賛成してるわけじゃない。「論理としてわかる」という意味。反対意見を続けてもOK。",
+    similar: "I see. → ただの理解\nI get it. → カジュアルな理解\nThat makes sense. → 論理的に納得",
+    example: "That makes sense. Let's adjust the schedule then.",
+    exampleJa: "なるほどね。じゃあスケジュールを調整しよう。",
     category: "同意・反応"
   },
   {
     phrase: "Fair enough.",
-    situation: "友人の言い分が完全には賛成じゃないけど、まあそうだなと思うとき",
-    dialogue: "A: I'd rather not go if it's going to rain.\nB: ___",
-    japanese: "「まあ、それはそうだね」って言いたい",
-    nuance: "「完全に同意はしないけど、あなたの言い分は理解できる」という絶妙なニュアンス。議論を無理に続けずスマートに収める言葉。100%賛成のときには使わない。",
-    caution: "投げやりに聞こえることもあるので、トーンに注意。丁寧に言いたいときは Fair enough, I can see your point. のように続けるとよい。",
-    similar: "That's fair. → ほぼ同じ意味でよりカジュアル\nI see your point. → 相手の視点を認めるが同意はしない\nFair enough. → 「まあ、それはそうだ」で話を収める",
-    example: "A: I need to leave by 9. I have an early start.\nB: Fair enough. Let's wrap up quickly.",
-    exampleJa: "A: 9時には出ないといけなくて。早い出発があるから。\nB: まあそうだね。じゃあ早めに終わらせよう。",
+    situation: "友達に映画の提案をしたら「今日は疲れてるから家がいい」と言われた",
+    dialogue: "A: I'd rather just stay home tonight, honestly.\nB: ___",
+    japanese: "「まあ、それもそうだね」って認めたい",
+    nuance: "100%賛成じゃないけど、相手の言い分を認める。「まあいいか」「それもアリだね」くらいの温度感。",
+    caution: "投げやりに聞こえることもある。トーン次第で「もういいよ」にもなるので注意。",
+    similar: "That's true. → 事実として認める\nI guess so. → しぶしぶ感が強い\nFair enough. → 相手の立場を尊重して認める",
+    example: "Fair enough. Let's do a movie night at your place instead.",
+    exampleJa: "まあそうだよね。じゃあ代わりにお前んちで映画でも観よう。",
     category: "同意・反応"
   },
   {
     phrase: "Tell me about it.",
-    situation: "友人が「最近ほんとに忙しくて」と愚痴ってきたとき",
-    dialogue: "A: I've been so stressed with work lately.\nB: ___",
-    japanese: "「ほんとそれ！わかる！」って共感したい",
-    nuance: "直訳は「それについて話して」だが、実際の意味は真逆で「言わなくてもわかる、私もまったく同じ気持ち」。自分も同じ経験・感情を持っているときだけ使える強い共感表現。",
-    caution: "自分が同じ状況にないのに使うと不自然。あくまで「私もそれ、めちゃわかる」というときだけ。知らない話題に使うと違和感が出る。",
-    similar: "I know, right? → 「でしょー！」（軽い同調）\nSame here. → 「私も同じ」（シンプルな同意）\nTell me about it. → 「ほんとそれ、身に染みてわかる」（最強の共感）",
-    example: "A: These meetings could've been an email.\nB: Tell me about it. I had four today.",
-    exampleJa: "A: この会議、メールで済む内容だよね。\nB: ほんとそれ。今日だけで4つあったよ。",
-    category: "同意・反応"
-  },
-  {
-    phrase: "You've got a point.",
-    situation: "友人に「それ、逆に考えたらどう？」と別の視点を出されたとき",
-    dialogue: "A: Maybe the problem is the approach, not the goal.\nB: ___",
-    japanese: "「あ、それは確かに一理あるね」って言いたい",
-    nuance: "「あなたの言いたいことには根拠がある」と認める表現。全面的に賛成するわけではなく、その指摘・視点を認めるニュアンス。議論の中で相手を立てながら話を進めるのに便利。",
-    caution: "You have a point. でも同じ意味。You've got a point, but... と続けて自分の意見も言うと会話がスムーズに続く。",
-    similar: "That's a good point. → 「いい指摘だね」（少しフォーマル）\nYou're right. → 「あなたが正しい」（完全な同意）\nYou've got a point. → 「一理ある」（部分的な認め方）",
-    example: "A: Maybe we should test it with a smaller group first.\nB: You've got a point. Let's do that.",
-    exampleJa: "A: まず小さいグループでテストした方がいいんじゃない？\nB: 確かに一理あるね。そうしよう。",
+    situation: "友達が「最近仕事忙しすぎてヤバい」と愚痴ってきた",
+    dialogue: "A: I've been working overtime every single day this week.\nB: ___",
+    japanese: "「ほんとそれ！わかりすぎる！」って共感したい",
+    nuance: "直訳「教えて」じゃない！「本当にそれな」「わかりみが深い」の意味。自分も同じ経験があるときに使う最強の共感表現。",
+    caution: "文字通り「教えて」と勘違いされやすい。会話の流れで意味が変わる典型例。",
+    similar: "I know, right? → 軽めの共感\nExactly! → 同意\nTell me about it. → 「自分もまさにそれ」という深い共感",
+    example: "Tell me about it. I haven't had a day off in two weeks.",
+    exampleJa: "ほんとそれ。俺なんて2週間休みなしだよ。",
     category: "同意・反応"
   },
   {
     phrase: "No wonder ~",
-    situation: "友人が「3日間ほとんど寝てない」と言ったあと、顔色が悪いのを見て",
-    dialogue: "A: I've barely slept for three days.\nB: ___ you look exhausted.",
-    japanese: "「それは疲れて見えるのも当然だ」って言いたい",
-    nuance: "「〜なのも当然だ、道理でそうか」という納得のニュアンス。新しい情報を聞いて、それまで疑問だったことの理由がわかったときに使う。驚きと納得が混ざった感じ。",
-    caution: "No wonder! と単独でも使える。「なるほどそういうことか！」という感嘆として。後に節が来るときは No wonder you're tired. のように続ける。",
-    similar: "That explains it. → 「それで説明がつく」（より論理的）\nOf course. → 「もちろん」（少し冷たく聞こえることも）\nNo wonder. → 「道理でそうか、納得」（温かみがある）",
-    example: "A: I skipped lunch again today.\nB: No wonder you're in a bad mood.",
-    exampleJa: "A: 今日もランチ抜いちゃった。\nB: それは機嫌が悪くなるのも当然だよ。",
+    situation: "同僚が「昨日3時間しか寝てない」と言った。それで顔色が悪いのか、と納得",
+    dialogue: "A: I only slept three hours last night.\nB: ___",
+    japanese: "「どうりで（顔色悪いと思った）」って言いたい",
+    nuance: "原因を聞いて「あぁ、だからか」と腑に落ちたとき。That makes sense. に近いが、もっと「謎が解けた」感がある。",
+    caution: "ネガティブなことにも使えるが、相手を傷つけないよう文脈に注意。「No wonder you look terrible」は親しい間柄だけ。",
+    similar: "That explains it. → フォーマル寄り\nThat makes sense. → 論理的な納得\nNo wonder ~ → 「だからか！」と合点がいく感じ",
+    example: "No wonder you look so tired.",
+    exampleJa: "どうりでそんなに疲れた顔してるわけだ。",
+    category: "同意・反応"
+  },
+  {
+    phrase: "You've got a point.",
+    situation: "会議で自分と違う意見が出たが、確かに一理あると思った",
+    dialogue: "A: Maybe we should delay the launch and fix the bugs first.\nB: ___",
+    japanese: "「確かに、一理あるね」って認めたい",
+    nuance: "相手の意見の全部じゃなく「その部分は確かにそうだ」と認める。自分の意見を変えるわけじゃないが、相手の視点を尊重している。",
+    caution: "この後に but... を続けると「でもね」と反論できる。認めつつ自分の意見も言える便利な表現。",
+    similar: "That's true. → 事実として認める\nGood point. → ややフォーマル\nYou've got a point. → 口語的で、議論の中で使いやすい",
+    example: "You've got a point. Let me think about that.",
+    exampleJa: "確かに一理あるね。ちょっと考えさせて。",
     category: "同意・反応"
   },
 
-  // ── 自分の状態・気持ち ──
+  // ── 自分の状態（6） ──
   {
     phrase: "I was about to ~",
-    situation: "友人から「もう帰った？」とメッセージが来たとき、ちょうど出ようとしていた",
-    dialogue: "A: Are you still at the office?\nB: ___ leave, actually.",
-    japanese: "「ちょうど出ようとしてたところだった」って言いたい",
-    nuance: "「まさにそれをしようとしていた瞬間だった」という表現。タイミングの一致を伝えるのに便利。過去形で使うのがポイント（今まさに、ではなく「あの時点でちょうど」）。",
-    caution: "I'm about to ~ は「今まさに〜しようとしている」（現在形）。I was about to ~ は「あのとき〜しようとしていた」（過去形）。使い分けに注意。",
-    similar: "I was just going to ~ → ほぼ同じ意味\nI was on the verge of ~ → よりドラマティックな表現\nI was about to ~ → 自然でよく使われる口語表現",
-    example: "A: Did you call me? I missed it.\nB: I was about to text you actually.",
-    exampleJa: "A: 電話した？気づかなかった。\nB: 実はちょうどメッセージしようとしてたんだ。",
+    situation: "電話しようと思ってたら、ちょうど相手からかかってきた",
+    dialogue: "A: Hey, I was just calling to check in.\nB: ___",
+    japanese: "「ちょうど俺もかけようとしてたとこ！」って言いたい",
+    nuance: "「まさに今〜しようとしていた」。タイミングの一致を伝える。be going to よりも「あと一瞬で」という臨場感がある。",
+    caution: "過去形（was about to）で使うことがほとんど。現在形の I'm about to ~ は「今からやるよ」の意味。",
+    similar: "I was going to ~ → 予定していた（もう少し前から）\nI was just about to ~ → just を入れるとさらに「まさにちょうど」感UP\nI was about to ~ → 直前だった",
+    example: "I was about to call you!",
+    exampleJa: "ちょうど電話しようとしてたところだよ！",
     category: "自分の状態"
   },
   {
     phrase: "I tend to ~",
-    situation: "自分のクセや傾向を話すとき",
-    dialogue: "A: Do you usually plan things out in advance?\nB: Yeah, ___ overthink everything.",
-    japanese: "「どうしても〜しがちなんだよね」って言いたい",
-    nuance: "「〜する傾向がある、〜しがち」という自分の習慣や癖を話す表現。I always ~ だと強すぎるが、I tend to ~ なら「毎回ではないけど、傾向として」というニュアンスになる。自己分析を話すときに自然に使える。",
-    caution: "I tend to のあとは動詞の原形。I tend to be late. / I tend to forget things. のように使う。名詞は来ない。",
-    similar: "I usually ~ → 「たいてい〜する」（頻度の話）\nI have a habit of ~ing → 「〜する習慣がある」（少し固い）\nI tend to ~ → 「〜しがち、傾向がある」（自然な口語）",
-    example: "A: How do you handle stress?\nB: Honestly, I tend to bottle things up. I'm working on it.",
-    exampleJa: "A: ストレスってどう対処してる？\nB: 正直、溜め込みがちなんだよね。直そうとしてるんだけど。",
+    situation: "自己紹介で、自分の性格や傾向を話す場面",
+    dialogue: "A: What's your work style like?\nB: ___",
+    japanese: "「〜しがちなんだよね」って自分の傾向を伝えたい",
+    nuance: "習慣的な傾向。ポジティブにもネガティブにも使える。自己分析っぽく聞こえるので、面接やカジュアルな自己紹介で重宝。",
+    caution: "usually とは違い、「意図せずそうなる」ニュアンスが入る。I tend to overeat. は「つい食べすぎちゃう」。",
+    similar: "I usually ~ → 意図的な習慣\nI often ~ → 頻度の事実\nI tend to ~ → 無意識の傾向・癖",
+    example: "I tend to overthink things, so I try to set deadlines for myself.",
+    exampleJa: "考えすぎる傾向があるから、自分で締め切りを決めるようにしてる。",
     category: "自分の状態"
   },
   {
     phrase: "I'm used to ~ing",
-    situation: "「一人で仕事するの大変じゃない？」と聞かれたとき",
-    dialogue: "A: Isn't it tough working from home alone all day?\nB: Not really. ___ it.",
-    japanese: "「もう慣れてるから大丈夫」って言いたい",
-    nuance: "「〜することに慣れている、もう普通のことになっている」という表現。最初は大変だったけど今は平気、というニュアンスが含まれる。I'm familiar with ~ は知識として知っている意味なので別物。",
-    caution: "I'm used to のあとは必ず動名詞（~ing）。I'm used to work. は誤り、I'm used to working. が正しい。また I used to ~ （過去の習慣）とは全く意味が異なるので要注意。",
-    similar: "I'm familiar with ~ → 「〜を知っている」（知識・経験の話）\nI've gotten used to ~ → 「慣れてきた」（変化を強調）\nI'm used to ~ing → 「もう慣れてる」（現在の状態）",
-    example: "A: Doesn't the noise bother you?\nB: I'm used to working in noisy places.",
-    exampleJa: "A: 騒音は気にならない？\nB: うるさい場所で作業するのには慣れてるよ。",
+    situation: "海外から来た人に「日本の電車の混雑つらくない？」と聞かれた",
+    dialogue: "A: Isn't the rush hour train crazy?\nB: ___",
+    japanese: "「もう慣れたよ」って言いたい",
+    nuance: "「以前は大変だったけど、今はもう平気」。過去の苦労と現在の適応を同時に伝える。",
+    caution: "I used to ~（以前は〜していた）と混同注意！ I'm used to ~ing = 慣れている。I used to ~ = 昔の習慣。",
+    similar: "I got used to ~ → 慣れるプロセスに焦点\nI'm used to ~ → 今もう慣れている状態\nI used to ~ → 昔〜していた（今はしない）※全く別の意味",
+    example: "I'm used to waking up early. I've been doing it for years.",
+    exampleJa: "早起きには慣れてるよ。もう何年もやってるから。",
     category: "自分の状態"
   },
   {
     phrase: "I can't help ~ing",
-    situation: "面白い動画を見るとつい笑ってしまうと話しているとき",
-    dialogue: "A: Why are you laughing? It's not even that funny.\nB: Sorry, ___ it.",
-    japanese: "「笑わずにいられない」って言いたい",
-    nuance: "「〜せずにいられない、どうしても〜してしまう」という意味。自分の意志ではコントロールできない感情や行動を表す。I can't stop ~ing とほぼ同じだが、I can't help には「わかっててもやめられない」という諦め感がある。",
-    caution: "I can't help it. で「どうしようもない、仕方ない」という独立した表現にもなる。また I can't help but + 動詞原形（I can't help but laugh.）という形でも使える。",
-    similar: "I can't stop ~ing → 「〜が止まらない」（より行動が継続している感じ）\nI can't resist ~ing → 「〜を我慢できない」（誘惑に負ける感じ）\nI can't help ~ing → 「〜せずにいられない」（自然な衝動）",
-    example: "A: You're smiling again.\nB: I can't help smiling when I think about it.",
-    exampleJa: "A: また笑ってる。\nB: そのことを考えると笑わずにいられないんだよね。",
+    situation: "友達のモノマネが面白すぎて、笑いを堪えられない",
+    dialogue: "A: [doing a hilarious impression]\nB: Stop, stop! ___",
+    japanese: "「笑わずにいられない！」って言いたい",
+    nuance: "「〜せずにはいられない」。感情や衝動が抑えられないとき。can't のところに「やめたいけど無理」の葛藤がある。",
+    caution: "ネガティブな場面でも使える。I can't help worrying.（心配せずにいられない）。コントロールできない感情全般に使える。",
+    similar: "I keep ~ing → 繰り返してしまう（意志の弱さ）\nI can't stop ~ing → やめられない（動作）\nI can't help ~ing → 感情的に抑えられない",
+    example: "I can't help laughing every time he tells that story.",
+    exampleJa: "彼がその話をするたびに笑わずにいられない。",
     category: "自分の状態"
   },
   {
     phrase: "I'm looking forward to ~",
-    situation: "来週の旅行を楽しみにしていることを伝えるとき",
-    dialogue: "A: So the trip is next week!\nB: Yeah, ___ it so much.",
-    japanese: "「めちゃくちゃ楽しみにしてる」って言いたい",
-    nuance: "「〜を楽しみにしている」。単なる期待ではなく、ポジティブな気持ちで待っているというニュアンス。日常会話でもビジネスメールでも使える万能表現。",
-    caution: "to のあとは必ず動名詞（~ing）または名詞。I'm looking forward to see you. は誤り、I'm looking forward to seeing you. が正しい。to は前置詞なので要注意。",
-    similar: "I can't wait for ~ → 「待ちきれない！」（よりカジュアルで興奮している感じ）\nI'm excited about ~ → 「わくわくしてる」（感情を強調）\nI'm looking forward to ~ → フォーマルでもカジュアルでも使える",
-    example: "A: Are you nervous about the presentation?\nB: A little, but I'm looking forward to it.",
-    exampleJa: "A: プレゼン緊張してる？\nB: 少しはね。でも楽しみにしてるよ。",
+    situation: "来月の旅行の話をしている",
+    dialogue: "A: Our trip to Okinawa is next month!\nB: ___",
+    japanese: "「楽しみすぎる！」って伝えたい",
+    nuance: "ワクワク感を伝える定番表現。フォーマルでもカジュアルでも使える万能選手。メールの締めにもよく使う。",
+    caution: "to の後ろは動名詞（~ing）！ I'm looking forward to see ×  → to seeing ○。ここが最大のミスポイント。",
+    similar: "I can't wait! → もっとカジュアルで興奮してる\nI'm excited about ~ → 感情をストレートに\nI'm looking forward to ~ → 期待と楽しみ。フォーマルにも使える",
+    example: "I'm looking forward to seeing everyone at the party.",
+    exampleJa: "パーティーでみんなに会えるのを楽しみにしてるよ。",
+    category: "自分の状態"
+  },
+  {
+    phrase: "I had no idea ~",
+    situation: "友達がいつの間にか転職していたことを知った",
+    dialogue: "A: Actually, I switched jobs last month.\nB: ___",
+    japanese: "「全然知らなかった！」って驚きたい",
+    nuance: "I didn't know より驚きが強い。「マジで？全く知らなかった」。知らなかったことへの驚き＋ちょっとした悔しさも入る。",
+    caution: "過去形 had で使うのが一般的。「その時点で知らなかった」のニュアンス。",
+    similar: "I didn't know ~ → 普通に知らなかった\nI never knew ~ → ずっと知らなかった\nI had no idea ~ → 全く予想もしてなかった（驚き最大）",
+    example: "I had no idea you could play the piano!",
+    exampleJa: "ピアノ弾けるなんて全然知らなかった！",
     category: "自分の状態"
   },
 
-  // ── 話の切り出し・つなぎ ──
+  // ── 話の切り出し（5） ──
   {
     phrase: "To be honest,",
-    situation: "本音を言いにくいけど正直に伝えたいとき",
-    dialogue: "A: What did you think of the movie?\nB: ___ I fell asleep halfway through.",
-    japanese: "「正直に言うと…」って切り出したい",
-    nuance: "「正直に言うと」と本音を切り出すときの前置き。Honestly, より少し丁寧で、相手への配慮がある。「あなたを批判したいわけじゃないけど、本当のことを言うと」というニュアンスが含まれる。",
-    caution: "To be honest, を多用しすぎると「じゃあ他のときは嘘ついてるの？」という印象を与えることも。大切な局面で使うのがベスト。",
-    similar: "Honestly, → 「正直、」（より直接的・カジュアル）\nFrankly, → 「率直に言うと」（やや硬い）\nTo be honest, → バランスよく本音を伝える",
-    example: "A: Do you think I should take the job?\nB: To be honest, I think you should wait for something better.",
-    exampleJa: "A: その仕事、受けるべきだと思う？\nB: 正直に言うと、もっといいのを待った方がいいと思う。",
-    category: "つなぎ"
+    situation: "友達に「新しい髪型どう？」と聞かれて、正直に答えたい",
+    dialogue: "A: What do you think of my new haircut?\nB: ___",
+    japanese: "「正直に言うとね…」って本音を切り出したい",
+    nuance: "本音を言う前のクッション。「悪気はないけど正直に言うよ」という誠実さが伝わる。嘘をつきたくないときに。",
+    caution: "この後にネガティブなことが来ると予想されるので、ポジティブなことを言うと逆に効果的。",
+    similar: "Honestly, → もう少しストレート\nTBH (texting) → テキストの省略形\nTo be honest, → 丁寧に本音を切り出す",
+    example: "To be honest, I think the previous style suited you better.",
+    exampleJa: "正直に言うと、前のスタイルの方が似合ってたと思う。",
+    category: "話の切り出し"
   },
   {
     phrase: "Come to think of it,",
-    situation: "会話中にふと関係することを思い出したとき",
-    dialogue: "A: I haven't heard from Jake lately.\nB: ___ he mentioned moving to Osaka.",
-    japanese: "「そういえば、〜だったっけ」って言いたい",
-    nuance: "「今考えてみると、そういえば」という表現。会話の流れの中でふと記憶が蘇ったときや、話題に関連することを思い出したときに自然に使える。日本語の「そういえば」にとても近い。",
-    caution: "文頭に置いて使う。Come to think of it, I haven't eaten anything today. のように、思い出したことをそのまま続ける。",
-    similar: "Speaking of which, → 「それで思い出したけど」（話題の連想）\nNow that you mention it, → 「言われてみれば」（相手の言葉がきっかけ）\nCome to think of it, → 「そういえば」（自分がふと思い出した）",
-    example: "A: Are you free this weekend?\nB: Come to think of it, I have a thing on Saturday. Sunday works though.",
-    exampleJa: "A: 今週末空いてる？\nB: そういえば土曜は予定あるわ。日曜なら大丈夫だけど。",
-    category: "つなぎ"
+    situation: "話の途中でふと関連することを思い出した",
+    dialogue: "A: I haven't seen Tanaka lately.\nB: ___",
+    japanese: "「そういえばさ…」って思い出したことを言いたい",
+    nuance: "会話の中で何かを連想して思い出す「そういえば」。脳内で繋がった瞬間に使う。",
+    caution: "話題転換に使うが、前の話題と全く無関係だと不自然。何かしら繋がりが必要。",
+    similar: "Speaking of which, → 直前の話題からの派生\nBy the way, → 話題を変える\nCome to think of it, → ふと思い出す",
+    example: "Come to think of it, he mentioned something about taking time off.",
+    exampleJa: "そういえば、彼、休みを取るとか言ってたな。",
+    category: "話の切り出し"
   },
   {
     phrase: "Speaking of which,",
-    situation: "友人がコーヒーの話をしていて、ちょうどカフェに行く用事があると思い出したとき",
-    dialogue: "A: I've been drinking too much coffee lately.\nB: ___ I was going to grab one. Want anything?",
-    japanese: "「それで思い出したんだけど」って話をつなげたい",
-    nuance: "「それに関連して言うと、その話で思い出したけど」という表現。直前の話題から連想して新しい話題を出すときに使う。話の流れを自然につなぐ便利な言葉。",
-    caution: "必ず直前の話題と関連するものを続ける。全く関係ない話を続けると不自然になる。",
-    similar: "Come to think of it, → 「そういえば」（自分がふと思い出した）\nOn that note, → 「それに関連して」（やや硬め）\nSpeaking of which, → 「それで思い出したけど」（話の連想）",
-    example: "A: I love that new Italian place.\nB: Speaking of which, they're opening a second location next month.",
-    exampleJa: "A: あの新しいイタリアンのお店好きだわ。\nB: それで思い出したけど、来月2号店がオープンするんだって。",
-    category: "つなぎ"
+    situation: "レストランの話をしていて、関連する別の話を思い出した",
+    dialogue: "A: That Italian place was really good.\nB: ___",
+    japanese: "「それで思い出したんだけど…」って話を繋げたい",
+    nuance: "直前の話題から自然に別の話に繋げる接続詞。「今の話に関連して」。会話の流れを壊さずに話題を展開できる。",
+    caution: "前の話題と関連がないと使えない。全く別の話をするなら By the way, を使う。",
+    similar: "By the way, → 話題を変える\nThat reminds me, → 何かを思い出すきっかけ\nSpeaking of which, → 直前の話題から派生",
+    example: "Speaking of which, have you tried that new ramen shop near the station?",
+    exampleJa: "それで思い出したけど、駅の近くの新しいラーメン屋行った？",
+    category: "話の切り出し"
   },
   {
     phrase: "That said,",
-    situation: "「この仕事は大変だ」と言ったあと、でもやりがいがあると付け加えたいとき",
-    dialogue: "A: The project is really tough.\nB: ___ it's been a great learning experience.",
-    japanese: "「とはいえ、〜なんだけどね」って転換したい",
-    nuance: "「そうは言っても、とはいえ」と前の内容を認めつつ反論や補足を加えるときの表現。That said, の前後で内容が少し方向転換する。会話をバランスよく続けるのに便利。",
-    caution: "That said, の前には一度「確かにAだ」という内容を言い、That said, で「でもBもある」と続けるのが自然な流れ。いきなり使い始めると唐突になる。",
-    similar: "However, → 「しかし」（より対立が強い）\nThat being said, → ほぼ同じ意味（少し長い）\nThat said, → 「とはいえ」（スムーズな転換）",
-    example: "A: The commute is brutal.\nB: That said, the office itself is really nice.",
-    exampleJa: "A: 通勤がきつくてさあ。\nB: とはいえ、オフィス自体はすごく良いんだけどね。",
-    category: "つなぎ"
-  },
-  {
-    phrase: "Now that you mention it,",
-    situation: "友人が「そういえばあの映画見た？」と言って、自分も気になっていたことを思い出したとき",
-    dialogue: "A: Did you ever try that coffee shop by the park?\nB: ___ I walked past it last week and wanted to go in.",
-    japanese: "「言われてみれば、〜だったな」って言いたい",
-    nuance: "「あなたが言ったおかげで思い出した・気づいた」という表現。Come to think of it, が自分の中からふと思い出す感じなのに対し、Now that you mention it, は相手の言葉がきっかけになっている点が違う。",
-    caution: "相手が何かを言った直後に使う表現なので、いきなり文頭に置くと不自然。必ず相手の発言を受けて使う。",
-    similar: "Come to think of it, → 「そういえば」（自分がふと思い出した）\nSpeaking of which, → 「それで思い出したけど」（話題の連想）\nNow that you mention it, → 「言われてみれば」（相手の言葉がきっかけ）",
-    example: "A: I heard the old bookstore closed down.\nB: Now that you mention it, I noticed it was empty last time I walked by.",
-    exampleJa: "A: あの古本屋、閉まったらしいよ。\nB: 言われてみれば、この前通ったとき空っぽだったな。",
-    category: "つなぎ"
+    situation: "映画を褒めた後に、気になった点も伝えたい",
+    dialogue: "A: The movie was visually stunning.\nB: Totally. ___",
+    japanese: "「とはいえ…」って前の話を認めつつ転換したい",
+    nuance: "前の内容を否定せずに「でもね」と付け加える。バランスの取れた意見を言うときに超便利。",
+    caution: "However よりカジュアルで、会話で自然に使える。書き言葉でも口語でもOK。",
+    similar: "However, → フォーマル\nBut ~ → ストレートに反論\nThat said, → 前を認めつつ転換。大人の会話感。",
+    example: "That said, the story could have been a bit shorter.",
+    exampleJa: "とはいえ、ストーリーはもう少し短くてもよかったかな。",
+    category: "話の切り出し"
   },
   {
     phrase: "The thing is,",
-    situation: "断りたいけど理由を説明したいとき",
-    dialogue: "A: Can you cover my shift on Friday?\nB: ___ I already have plans.",
-    japanese: "「実はね、〜なんだよ」って核心を言いたい",
-    nuance: "「実はね、問題はね、肝心なのは」と核心や本音を切り出すときの表現。少し言いにくいことや、説明が必要なことを話し始めるときに自然に使える。",
-    caution: "The thing is, の後には理由や事情が続く。断りやネガティブな内容を柔らかく伝えるのに特に便利。",
-    similar: "The truth is, → 「実を言うと」（より告白っぽい）\nHere's the thing: → ほぼ同じ意味（会話でよく使う）\nThe thing is, → 「実はね」（柔らかく核心へ）",
-    example: "A: Why didn't you come yesterday?\nB: The thing is, I wasn't feeling well but didn't want to cancel last minute.",
-    exampleJa: "A: 昨日なんで来なかったの？\nB: 実はね、体調悪かったんだけど、ギリギリでキャンセルするのも悪いと思って。",
-    category: "つなぎ"
+    situation: "誘いを断りたいが、理由を説明しなきゃいけない",
+    dialogue: "A: Can you come to the party this Saturday?\nB: I wish I could. ___",
+    japanese: "「実はね…」「問題はね…」って核心を切り出したい",
+    nuance: "言いにくいことや核心を切り出すときの前置き。「ここが肝心なんだけど」。少し言いづらそうなニュアンスが入る。",
+    caution: "ネガティブな理由の前振りとして使うことが多い。ポジティブな文脈ではあまり使わない。",
+    similar: "Actually, → 軽い訂正・補足\nThe problem is, → もっとストレートに問題提起\nThe thing is, → やんわり核心に触れる",
+    example: "The thing is, I already promised my parents I'd visit them.",
+    exampleJa: "実はね、もう親のところに行くって約束しちゃってるんだよね。",
+    category: "話の切り出し"
   },
 
-  // ── 提案・誘い ──
+  // ── 提案・誘い（4） ──
   {
     phrase: "Why don't we ~?",
-    situation: "同僚と昼休みにランチに行こうと誘うとき",
-    dialogue: "A: I'm starving.\nB: ___ grab something to eat?",
-    japanese: "「〜しない？」って軽く誘いたい",
-    nuance: "「〜しない？」と相手を柔らかく誘ったり提案したりする表現。命令でも強い要求でもなく、相手が断りやすい余地を残している。フレンドリーで自然な提案の仕方。",
-    caution: "Why don't you ~? は「あなたが〜したら？」という提案・アドバイス。Why don't we ~? は「一緒に〜しない？」という誘い。weとyouで意味が変わるので注意。",
-    similar: "How about ~ing? → 「〜するのはどう？」（より軽い感じ）\nShall we ~? → 「〜しましょうか」（少しフォーマル）\nWhy don't we ~? → 「〜しない？」（フレンドリーな誘い）",
-    example: "A: I need a break.\nB: Why don't we take a walk? It's nice outside.",
-    exampleJa: "A: 休憩したい。\nB: 散歩でもしない？外いい天気だよ。",
+    situation: "昼休みに同僚をランチに誘いたい",
+    dialogue: "A: I'm free this afternoon.\nB: ___",
+    japanese: "「一緒に〜しない？」って柔らかく誘いたい",
+    nuance: "提案＋誘いのニュアンス。命令でも質問でもなく「〜しない？」と柔らかく誘える。相手に断る余地を残している。",
+    caution: "カジュアルな場面向け。会議などフォーマルな場では Shall we ~? や I'd suggest ~ing の方が自然。",
+    similar: "How about ~ing? → より軽いノリ\nWhat if we ~? → アイデア出し寄り\nWhy don't we ~? → 誘い・提案に一番自然",
+    example: "Why don't we grab lunch together?",
+    exampleJa: "一緒にランチでもどう？",
     category: "提案・誘い"
   },
   {
     phrase: "How about ~ing?",
-    situation: "友人と夕食の場所を決めているとき",
-    dialogue: "A: Where do you want to eat?\nB: ___ trying that new ramen place?",
-    japanese: "「〜するのはどう？」って提案したい",
-    nuance: "「〜するのはどうかな？」と軽く選択肢を提示する表現。Why don't we ~ より少しカジュアルで、アイデアをさっと出す感じ。断られても気まずくない距離感がある。",
-    caution: "How about ~ing? と How about + 名詞? の両方が使える。How about some coffee? / How about taking a break? どちらも自然。",
-    similar: "Why don't we ~? → 「〜しない？」（誘いに近い）\nWhat about ~ing? → ほぼ同じ意味\nHow about ~ing? → 「〜するのはどう？」（軽い提案）",
-    example: "A: I don't know what to do this weekend.\nB: How about checking out that art exhibition?",
-    exampleJa: "A: 今週末何しようかな。\nB: あの美術展に行ってみるのはどう？",
+    situation: "週末の計画を立てていて、別のアイデアを出したい",
+    dialogue: "A: I'm not sure what to do this weekend.\nB: ___",
+    japanese: "「〜するのはどう？」って軽く提案したい",
+    nuance: "気軽な提案。Why don't we ~? よりもっとラフ。「こんなのどう？」くらいの軽さ。ブレスト的に使える。",
+    caution: "about の後は動名詞（~ing）。How about to go × → How about going ○。",
+    similar: "Why don't we ~? → もう少し推してる\nWhat about ~ing? → ほぼ同じ意味\nHow about ~ing? → 最もカジュアルな提案",
+    example: "How about going to that new BBQ place?",
+    exampleJa: "あの新しいBBQのお店に行くのはどう？",
     category: "提案・誘い"
   },
   {
     phrase: "Feel free to ~",
-    situation: "友人を家に招いたとき、遠慮しないでと伝えたいとき",
-    dialogue: "A: Should I take off my shoes?\nB: ___ make yourself at home.",
-    japanese: "「遠慮なく〜してね」って言いたい",
-    nuance: "「気兼ねなく〜してください」という、相手に許可を与えながらリラックスさせる表現。命令ではなく「どうぞご自由に」という温かい招待のニュアンス。",
-    caution: "Feel free to のあとは動詞の原形。Feel free to ask me anything. / Feel free to leave early. のように使う。",
-    similar: "Go ahead and ~ → 「どうぞ〜してください」（少し背中を押す感じ）\nDon't hesitate to ~ → 「遠慮なく〜してください」（よりフォーマル）\nFeel free to ~ → 「気兼ねなく〜してね」（温かみがある）",
-    example: "A: Is it okay if I grab some water?\nB: Feel free to! The glasses are in the cabinet.",
-    exampleJa: "A: 水をもらってもいい？\nB: 遠慮なく！グラスは戸棚の中にあるよ。",
+    situation: "新しいチームメンバーに「何でも聞いてね」と伝えたい",
+    dialogue: "A: I'm still learning the ropes here.\nB: No worries. ___",
+    japanese: "「遠慮なく〜してね」って気を遣わせたくない",
+    nuance: "「気兼ねなくどうぞ」。相手に心理的なハードルを下げてあげる表現。ホスピタリティ溢れる言い方。",
+    caution: "上から目線にならないよう、トーンに気をつける。Please feel free to ~ とするとよりフォーマル。",
+    similar: "Don't hesitate to ~ → フォーマル（ビジネスメール向き）\nGo ahead and ~ → 許可のニュアンスが強い\nFeel free to ~ → 遠慮しなくていいよ、の温かさ",
+    example: "Feel free to ask me anything anytime.",
+    exampleJa: "いつでも何でも遠慮なく聞いてね。",
     category: "提案・誘い"
   },
   {
     phrase: "Go ahead and ~",
-    situation: "友人が「先に食べていい？」と聞いてきたとき",
-    dialogue: "A: Should I wait for you before starting?\nB: No, ___ start without me.",
-    japanese: "「どうぞ、先にやっていいよ」って言いたい",
-    nuance: "「どうぞ〜してください、先にやっていいよ」と相手の行動を許可・促す表現。遠慮している相手の背中を押すときに使う。命令ではなく「あなたがそうしていいよ」という承認のニュアンス。",
-    caution: "Go ahead. 単独でも「どうぞ」という意味になる。Go ahead and ~ と続けると、より具体的に何をしていいかを伝えられる。",
-    similar: "Feel free to ~ → 「気兼ねなく〜してね」（よりリラックスした許可）\nPlease go ahead → 「どうぞ進めてください」（フォーマル）\nGo ahead and ~ → 「どうぞ〜してください」（背中を押す感じ）",
-    example: "A: I wasn't sure if I should send the email yet.\nB: Go ahead and send it. It looks good.",
-    exampleJa: "A: メールもう送っていいか迷ってて。\nB: 送っちゃって大丈夫だよ。いい感じだから。",
+    situation: "同僚が「先に始めていい？」と聞いてきた",
+    dialogue: "A: Should I start the presentation without you?\nB: ___",
+    japanese: "「どうぞ、やっちゃって」って背中を押したい",
+    nuance: "「どうぞ遠慮なく」＋「やっちゃって」。許可だけでなく、背中を押すニュアンスがある。",
+    caution: "命令形に見えるが、実際は「どうぞ」の意味。Go ahead. だけでも「お先にどうぞ」として日常で頻出。",
+    similar: "Sure, no problem. → 単なる許可\nFeel free to ~ → 心理的ハードルを下げる\nGo ahead and ~ → 「やっちゃえ」と背中を押す",
+    example: "Go ahead and start without me. I'll catch up.",
+    exampleJa: "先に始めちゃって。すぐ追いつくから。",
     category: "提案・誘い"
   },
 
-  // ── 確認・聞き返し ──
-  {
-    phrase: "Could you say that again?",
-    situation: "相手の言葉が聞き取れなかったとき",
-    dialogue: "A: The meeting's been moved to Thursday at — (mumbles)\nB: Sorry, ___?",
-    japanese: "「もう一回言ってもらえる？」って聞き返したい",
-    nuance: "「もう一度言ってもらえますか？」という聞き返しの表現。Pardon? What? より丁寧で、Sorry? より少し具体的に「もう一度言って」とお願いしている。日常でもビジネスでも使いやすい。",
-    caution: "Could you repeat that? もほぼ同じ意味。What? や Huh? は聞き返せるがカジュアルすぎる場面もある。Could you say that again? はどんな場面でも安全に使える。",
-    similar: "Pardon? → 「え？なんですか？」（短くて丁寧）\nSorry? → 「え？」（カジュアル）\nCould you say that again? → 「もう一度言ってもらえますか？」（丁寧で明確）",
-    example: "A: The code is 7-4-2— (distracted)\nB: Could you say that again? I didn't catch the last part.",
-    exampleJa: "A: コードは7-4-2—（よそ見してる）\nB: もう一回言ってもらえる？最後のところが聞き取れなかった。",
-    category: "確認・聞き返し"
-  },
+  // ── 確認・聞き返し（5） ──
   {
     phrase: "What do you mean by ~?",
-    situation: "上司が「もっとフレキシブルに対応して」と言ったけど意味がわからないとき",
-    dialogue: "A: I need you to be more flexible with this.\nB: Sure — ___ flexible exactly?",
-    japanese: "「〜ってどういう意味ですか？」って確認したい",
-    nuance: "「〜というのは具体的にどういうことですか？」と言葉の意味を掘り下げる確認表現。曖昧な言葉を使われたときに、誤解を避けるために使う。相手を責めるのではなく、理解しようとしている姿勢を示せる。",
-    caution: "What do you mean? だけだと少し攻撃的に聞こえることもある。What do you mean by 〜? と具体的な言葉を入れると丁寧になる。",
-    similar: "Can you clarify ~? → 「〜を明確にしてもらえますか？」（フォーマル）\nWhat exactly do you mean? → 「具体的にはどういうこと？」（直接的）\nWhat do you mean by ~? → 「〜ってどういう意味？」（自然でバランスがいい）",
-    example: "A: We need to think outside the box here.\nB: What do you mean by 'outside the box' in this case?",
-    exampleJa: "A: ここは型破りな発想が必要だよ。\nB: この場合「型破り」ってどういう意味ですか？",
+    situation: "相手が曖昧な言葉を使ったので、具体的に何を指すか確認したい",
+    dialogue: "A: We need to be more flexible about this.\nB: ___",
+    japanese: "「〜って具体的にどういうこと？」って聞きたい",
+    nuance: "相手の発言の意味や意図を確認する。攻撃的ではなく、純粋に理解したいときに使う。ビジネスでも日常でも必須。",
+    caution: "トーンによっては「何が言いたいの？」と詰問に聞こえる。穏やかなトーンで。",
+    similar: "What does that mean? → もっとストレート\nCould you clarify ~? → フォーマル\nWhat do you mean by ~? → 特定の言葉について確認",
+    example: "What do you mean by 'flexible'? Like the deadline or the scope?",
+    exampleJa: "「柔軟に」ってどういう意味？締め切りのこと？それとも範囲のこと？",
     category: "確認・聞き返し"
   },
   {
-    phrase: "Just to make sure, ~",
-    situation: "待ち合わせの時間を念のため確認したいとき",
-    dialogue: "A: See you tomorrow!\nB: ___ we're meeting at 3, right?",
-    japanese: "「念のため確認したいんだけど、〜だよね？」って言いたい",
-    nuance: "「念のため確認させてください」という表現。自分の理解が正しいか確かめたいときや、ミスを防ぎたいときに使う。「信じていないわけじゃないけど、確認させて」という丁寧なニュアンスがある。",
-    caution: "Just to confirm, ~ とほぼ同じ意味。ビジネスメールでもよく使われる。確認した後に right? / is that correct? を付けると自然になる。",
-    similar: "Just to confirm, ~ → 「確認ですが」（少しフォーマル）\nCan I double-check? → 「確認していい？」（カジュアル）\nJust to make sure, ~ → 「念のため〜だよね？」（日常でも使いやすい）",
-    example: "A: The venue is the same as last time.\nB: Just to make sure, that's the place near the station, right?",
-    exampleJa: "A: 場所は前回と同じだよ。\nB: 念のため確認だけど、駅近くのところだよね？",
+    phrase: "Just to make sure,",
+    situation: "会議で決まったことの確認をしたい",
+    dialogue: "A: So we'll go with Plan B.\nB: ___",
+    japanese: "「念のため確認なんだけど」って認識合わせしたい",
+    nuance: "「念のため」。自分の理解が合ってるか確認するとき。ミスコミュニケーションを防ぐビジネス必須フレーズ。",
+    caution: "相手を疑ってるわけじゃなく、「自分の理解が正しいか確認させて」という謙虚な姿勢。",
+    similar: "Just to clarify, → よりフォーマル\nSo you're saying ~? → 相手の言葉を確認\nJust to make sure, → カジュアルに確認。日常もビジネスもOK",
+    example: "Just to make sure, we're meeting at 3 PM, right?",
+    exampleJa: "念のため確認だけど、3時集合で合ってるよね？",
     category: "確認・聞き返し"
   },
   {
     phrase: "I was wondering if ~",
-    situation: "友人に少し頼みにくいことをお願いするとき",
-    dialogue: "A: Hey, do you have a minute?\nB: Sure, what's up?\nA: ___ you could help me move this weekend.",
-    japanese: "「〜してもらえないかなって思ってたんだけど」って遠慮がちに頼みたい",
-    nuance: "「〜かなと思っていたんですが」という遠回しで丁寧なお願いの表現。直接 Can you ~? と言うより柔らかく、相手が断りやすい余地を作っている。相手への配慮が伝わる言い方。",
-    caution: "過去進行形（was wondering）を使うことで、「ずっと思っていた」という柔らかさが出る。I wonder if ~ は現在形で「〜かなあ」と独り言っぽくなる。",
-    similar: "Could you ~? → 「〜してもらえますか？」（直接的なお願い）\nWould you mind ~ing? → 「〜してもらえますか？」（丁寧）\nI was wondering if ~ → 「〜してもらえないかなと思っていて」（一番遠慮がちで柔らかい）",
-    example: "A: I was wondering if you'd be free for a call this week.\nB: Sure! How about Thursday?",
-    exampleJa: "A: 今週電話できる時間があるかなと思っていたんですが。\nB: もちろん！木曜はどうですか？",
+    situation: "上司に休暇の相談をしたい",
+    dialogue: "A: Do you have a minute?\nB: Sure, what's up?\nA: ___",
+    japanese: "「〜できるかなと思って…」って遠慮がちにお願いしたい",
+    nuance: "最も丁寧な質問・依頼の前置き。過去進行形で「ずっと考えてたんですが…」と控えめ感を演出。",
+    caution: "丁寧すぎて友達同士だと逆に距離を感じる場合も。カジュアルな場面では Can I ~? で十分。",
+    similar: "Can I ~? → カジュアルな依頼\nCould you ~? → 丁寧な依頼\nI was wondering if ~ → 最も控えめで丁寧",
+    example: "I was wondering if I could take Friday off next week.",
+    exampleJa: "来週の金曜日、お休みいただけないかなと思いまして。",
     category: "確認・聞き返し"
   },
   {
     phrase: "Do you happen to know ~?",
-    situation: "道を聞くとき、知らないかもしれないけど聞いてみようというとき",
-    dialogue: "A: Excuse me, ___ where the nearest convenience store is?",
-    japanese: "「もしかして〜ご存知ですか？」って遠慮がちに尋ねたい",
-    nuance: "「もしかして〜を知っていますか？」という表現。happen to を入れることで「知らないかもしれないけど、もし知っていれば」というニュアンスになり、相手のプレッシャーを減らせる。Do you know ~? より大幅に柔らかくなる。",
-    caution: "Do you happen to have ~? （もしかして〜を持っていますか？）のように、know 以外の動詞でも happen to は使える。",
-    similar: "Do you know ~? → 「〜を知っていますか？」（直接的）\nWould you happen to know ~? → さらに丁寧なバージョン\nDo you happen to know ~? → 「もしかして知ってますか？」（ちょうどいい丁寧さ）",
-    example: "A: Do you happen to know what time the library closes?\nB: I think it's 8. You could check online to be sure.",
-    exampleJa: "A: 図書館が何時に閉まるか、もしかしてご存知ですか？\nB: 8時だったと思いますよ。念のためネットで確認してみては。",
+    situation: "道で誰かに、近くのコンビニの場所を聞きたい",
+    dialogue: "[to a stranger on the street]\nA: Excuse me. ___",
+    japanese: "「もしご存知でしたら…」って遠慮がちに尋ねたい",
+    nuance: "「偶然ご存知ですか？」。相手が知らなくても全然OKという姿勢。知人にも見知らぬ人にも使える万能な丁寧表現。",
+    caution: "happen to が入ることで「知ってたらラッキーなんですが」のニュアンスに。プレッシャーをかけない。",
+    similar: "Do you know ~? → 普通の質問\nWould you know ~? → 丁寧だがやや硬い\nDo you happen to know ~? → 遠慮がちで好印象",
+    example: "Do you happen to know if there's a convenience store nearby?",
+    exampleJa: "この辺にコンビニがあるか、もしご存知でしたら教えていただけますか？",
+    category: "確認・聞き返し"
+  },
+  {
+    phrase: "Could you say that again?",
+    situation: "相手の話が聞き取れなかった",
+    dialogue: "A: [speaking quickly or with background noise]\nB: Sorry, ___",
+    japanese: "「もう一度言ってもらえますか？」って聞き返したい",
+    nuance: "聞き取れなかったときの丁寧な聞き返し。Pardon? より具体的で、What? より断然丁寧。実際の会話で一番使い勝手がいい。",
+    caution: "Could you の部分が丁寧さの鍵。Can you say that again? でもOKだがカジュアル度が上がる。",
+    similar: "What? / Huh? → カジュアル（友達向け）\nPardon? → 短いが少し古い印象\nCould you say that again? → 自然で丁寧。万能。",
+    example: "Sorry, could you say that again? I didn't quite catch it.",
+    exampleJa: "すみません、もう一度言ってもらえますか？ちょっと聞き取れなくて。",
     category: "確認・聞き返し"
   },
 
-  // ── 強調・感情 ──
-  {
-    phrase: "I had no idea ~",
-    situation: "友人の意外な趣味を初めて知ったとき",
-    dialogue: "A: I've been playing drums for ten years.\nB: Really? ___ you played!",
-    japanese: "「全然知らなかった！」って驚きを伝えたい",
-    nuance: "「まったく知らなかった、思いもしなかった」という強い驚きの表現。I didn't know ~ よりずっと強く、「これっぽっちも知らなかった」というニュアンス。驚きをしっかり伝えたいときに使う。",
-    caution: "I had no idea のあとに that 節（I had no idea that it was so expensive.）か、疑問詞節（I had no idea how hard it was.）が続くのが自然。",
-    similar: "I didn't know ~ → 「知らなかった」（シンプルな事実）\nI never knew ~ → 「〜とは知らなかった」（少し感情的）\nI had no idea ~ → 「まったく知らなかった」（強い驚き）",
-    example: "A: I used to live in New York.\nB: I had no idea! How long were you there?",
-    exampleJa: "A: 昔ニューヨークに住んでたんだよ。\nB: 全然知らなかった！どのくらいいたの？",
-    category: "強調・感情"
-  },
+  // ── 強調・感情（5） ──
   {
     phrase: "It turned out that ~",
-    situation: "怖そうだと思っていた映画が意外と面白かったと話すとき",
-    dialogue: "A: How was that horror movie?\nB: ___ it was more funny than scary.",
-    japanese: "「結果的には〜だったんだよね」って言いたい",
-    nuance: "「〜ということが判明した、結果的に〜だった」という表現。最初の予想や期待とは違う結果になったときに使うことが多い。良い意味でも悪い意味でも使える。",
-    caution: "It turned out to be ~ という形でも使える（It turned out to be a great decision.）。that節とto be + 形容詞/名詞の両方の形を覚えておくと便利。",
-    similar: "As it turned out, ~ → 「結果的には」（文頭に置く形）\nIt ended up ~ → 「結局〜になった」（より口語的）\nIt turned out that ~ → 「〜ということになった」（自然で頻繁に使う）",
-    example: "A: Did you find the lost wallet?\nB: Yeah, it turned out that it was in my jacket the whole time.",
-    exampleJa: "A: 落とした財布見つかった？\nB: うん、ずっとジャケットの中にあったんだよ。",
+    situation: "心配していたテストの結果が思ったより良かった",
+    dialogue: "A: How did the exam go?\nB: ___",
+    japanese: "「結局〜だったんだよ」って結果を伝えたい",
+    nuance: "予想と違う結果になったとき。「蓋を開けてみたら」のニュアンス。良い意味でも悪い意味でも使える。",
+    caution: "過去の出来事に使う。現在進行中のことには使わない。",
+    similar: "In the end, ~ → 最終的に（経緯に焦点）\nAs it turns out, ~ → 今わかったこと\nIt turned out that ~ → 結果が予想外だった",
+    example: "It turned out that the test was easier than I expected.",
+    exampleJa: "結局、テストは思ったより簡単だったんだよ。",
     category: "強調・感情"
   },
   {
     phrase: "There's no way ~",
-    situation: "友人が「あの映画3時間あるよ」と言ったとき信じられないとき",
-    dialogue: "A: That movie is three hours long.\nB: ___ it's that long!",
-    japanese: "「〜なんてありえない！」って言いたい",
-    nuance: "「〜なんて絶対にない、ありえない」という強い否定や不信感の表現。There's no way I'm doing that. のように自分の行動への強い拒否にも使えるし、There's no way that's true. のように信じられない事実への反応にも使える。",
-    caution: "There's no way + 主語 + 動詞 の形で使う。There's no way he did that. （彼がそれをしたとはありえない）のように使う。",
-    similar: "That can't be right. → 「それはおかしい」（事実への疑問）\nAbsolutely not. → 「絶対にダメ」（拒否）\nThere's no way ~ → 「〜なんてありえない」（強い否定・拒否両方に使える）",
-    example: "A: He finished the marathon in under three hours.\nB: There's no way! That's incredible.",
-    exampleJa: "A: 彼、3時間以内にマラソン完走したんだって。\nB: ありえない！すごすぎる。",
+    situation: "友達が「明日までにこの仕事全部終わらせて」と言ってきた",
+    dialogue: "A: Can you finish all of this by tomorrow?\nB: ___",
+    japanese: "「絶対無理！ありえない！」って強く否定したい",
+    nuance: "強い否定。「ありえない」「絶対〜ない」。驚きや拒否の感情が入る。",
+    caution: "かなり強い表現。ビジネスのフォーマルな場面では避けた方がいい。That would be extremely difficult. などに言い換える。",
+    similar: "I don't think so. → 穏やかな否定\nImpossible! → 一言で断言\nThere's no way ~ → 感情込みの強い否定",
+    example: "There's no way I can finish all this by tomorrow.",
+    exampleJa: "明日までにこれ全部終わらせるなんて絶対無理だよ。",
     category: "強調・感情"
   },
   {
-    phrase: "If anything, ~",
-    situation: "「この仕事、楽になった？」と聞かれたけど、むしろ逆だと感じているとき",
-    dialogue: "A: Has the new system made things easier?\nB: ___ it's made things more complicated.",
-    japanese: "「どちらかといえば、むしろ〜」って言いたい",
-    nuance: "「どちらかといえば、むしろ」という表現。相手の言った方向とは逆の方が正しいかもしれない、または予想とは反対の状況を伝えるときに使う。「AじゃなくてむしろB」という微妙なニュアンスを表せる便利な表現。",
-    caution: "If anything, の後には相手の予想や前の内容と対比した内容を続ける。単純に「むしろ」と言いたいときはどんな文脈でも使えるが、対比がないと少し不自然。",
-    similar: "Rather, ~ → 「むしろ〜」（やや硬い）\nOn the contrary, ~ → 「それどころか」（強い反論）\nIf anything, ~ → 「どちらかといえばむしろ」（柔らかい対比）",
-    example: "A: Are you feeling better after the vacation?\nB: If anything, I feel more tired. Too much moving around.",
-    exampleJa: "A: 休暇で元気になった？\nB: どちらかといえば、むしろ疲れた。動きすぎたかも。",
+    phrase: "If anything,",
+    situation: "「最近太った？」と聞かれたが、むしろ痩せた気がする",
+    dialogue: "A: Have you gained weight recently?\nB: ___",
+    japanese: "「どちらかといえば〜だよ」って軽く反論したい",
+    nuance: "「強いて言えば」「どちらかといえば」。相手の認識をやんわり修正するとき。控えめだけど反論の意志がある。",
+    caution: "If anything の後は、相手の言ったことの逆や別方向のことが来る。",
+    similar: "Actually, → 単純な訂正\nOn the contrary, → フォーマルな反論\nIf anything, → やんわりと反対方向を示す",
+    example: "If anything, I've actually lost a couple of kilos.",
+    exampleJa: "どちらかといえば、むしろ2キロ痩せたんだけど。",
     category: "強調・感情"
   },
   {
     phrase: "It's about time ~",
-    situation: "ずっと待っていたバスがやっと来たとき",
-    dialogue: "A: The bus is finally here!\nB: ___ ! I've been waiting for 30 minutes.",
-    japanese: "「もうとっくにそうなって然るべきだった！」って言いたい",
-    nuance: "「もうそろそろ〜してもいい頃だ、ようやく〜だ」という表現。長い間待っていたことや、遅すぎると思っていたことがやっと起きたときに使う。軽い不満と安堵が混ざったニュアンス。",
-    caution: "It's about time + 主語 + 動詞（過去形）という形を使う。It's about time he apologized. （もうそろそろ謝ってもいい頃だ）のように、動詞が過去形になるのがポイント。",
-    similar: "Finally! → 「ついに！」（シンプルな安堵）\nAt last! → 「やっと！」（少し文語的）\nIt's about time ~ → 「もうとっくに〜すべきだった」（不満と安堵）",
-    example: "A: They finally fixed the elevator.\nB: It's about time! It's been broken for weeks.",
-    exampleJa: "A: やっとエレベーター直ったね。\nB: 遅すぎだよ！何週間も壊れてたんだから。",
+    situation: "ずっと昇進を待っていた同僚がやっと昇進した",
+    dialogue: "A: I finally got promoted!\nB: ___",
+    japanese: "「やっとだね！遅すぎるくらいだよ！」って言いたい",
+    nuance: "「もうそろそろ〜していい頃だ」「やっとか！」。待ちくたびれた感＋祝福。嬉しい場面でも皮肉にも使える。",
+    caution: "It's about time の後は過去形が文法的には正式だが、口語では原形もよく使われる。",
+    similar: "Finally! → シンプルに「やっと！」\nAt last! → ドラマチック\nIt's about time ~ → 「遅すぎるくらい」の皮肉混じりの祝福",
+    example: "It's about time they promoted you! You deserve it.",
+    exampleJa: "やっと昇進か！遅すぎるくらいだよ。当然だね。",
+    category: "強調・感情"
+  },
+  {
+    phrase: "It's not that ~, it's just that ~",
+    situation: "友達の誘いを断るとき、嫌なわけじゃないことを伝えたい",
+    dialogue: "A: You don't want to come, do you?\nB: ___",
+    japanese: "「〜ってわけじゃなくて、ただ〜なだけ」って誤解を解きたい",
+    nuance: "否定を和らげながら本当の理由を伝える。「〜が嫌なわけじゃない、ただ〜なだけ」。人間関係を壊さない神フレーズ。",
+    caution: "2つの文のバランスが大事。前半で否定、後半で本当の理由。後半が弱いと言い訳に聞こえる。",
+    similar: "I don't mean to ~, but ~ → 悪意はないが…\nIt's not like ~ → もっとカジュアル\nIt's not that ~, it's just that ~ → 丁寧に誤解を解く",
+    example: "It's not that I don't want to go, it's just that I'm exhausted today.",
+    exampleJa: "行きたくないわけじゃなくて、ただ今日はヘトヘトなだけなんだ。",
     category: "強調・感情"
   },
 ];
 
 // ── チャンク練習の状態 ──
 let chunkState={
-  phase:'card',    // 'card' | 'revealed' | 'done'
-  todayChunks:[],  // 今日の3フレーズ
-  ci:0,            // 現在のインデックス
-  repeatCount:0,   // このフレーズを何回リピートしたか
-  totalRepeats:0,  // セッション合計リピート数
+  phase:'card',
+  todayChunks:[],
+  ci:0,
+  repeatCount:0,
+  totalRepeats:0,
 };
 
 function getTodayChunks(){
-  // 日付をシードにして毎日同じ3つが出る
   const today=new Date().toISOString().slice(0,10);
   const seed=today.split('-').reduce((a,b)=>a*100+parseInt(b),0);
   const arr=[...CHUNKS];
-  // シード付きシャッフル（簡易版）
   for(let i=arr.length-1;i>0;i--){
     const j=Math.floor((seed*(i+1)*2654435761>>>0)%i);
     [arr[i],arr[j]]=[arr[j],arr[i]];
@@ -848,22 +848,19 @@ function revealChunk(){
   chunkState.phase='revealed';
   const c=chunkState.todayChunks[chunkState.ci];
   render();
-  // 表示と同時に音声再生
-  setTimeout(()=>speakChunk(c.phrase),300);
+  setTimeout(()=>speakChunk(c.example),300);
 }
 
-function speakChunk(phrase){
-  // ~の部分を除いて読む
-  const text=phrase.replace(/~/g,'something').replace(/\?/g,'');
-  speak(text,.75);
+function speakChunk(text){
+  const clean=text.replace(/~/g,'something').replace(/\?/g,'').replace(/___/g,'');
+  speak(clean,.75);
 }
 
 function repeatChunk(){
   chunkState.repeatCount++;
   chunkState.totalRepeats++;
   const c=chunkState.todayChunks[chunkState.ci];
-  speakChunk(c.phrase);
-  // リピートカウントだけ更新（アニメーションなし）
+  speakChunk(c.example);
   const el=document.getElementById('repeat-count');
   if(el)el.textContent=chunkState.repeatCount;
 }
@@ -895,94 +892,63 @@ function renderChunk(app){
   h+=`<span style="font-size:13px;color:#6666aa"><strong style="color:#fbbf24;font-size:18px">${chunkState.ci+1}</strong>/${total}</span>`;
   h+='</div>';
   // プログレスバー
-  h+=`<div style="height:4px;background:rgba(255,255,255,.06);border-radius:2px;margin-bottom:24px;overflow:hidden"><div style="height:100%;width:${(chunkState.ci/total)*100}%;background:linear-gradient(90deg,#fbbf24,#f59e0b);border-radius:2px;transition:width .4s"></div></div>`;
+  h+=`<div style="height:4px;background:rgba(255,255,255,.06);border-radius:2px;margin-bottom:28px;overflow:hidden"><div style="height:100%;width:${(chunkState.ci/total)*100}%;background:linear-gradient(90deg,#fbbf24,#f59e0b);border-radius:2px;transition:width .4s"></div></div>`;
 
   h+='<div style="animation:slideUp .4s ease">';
   // カテゴリ
-  h+=`<div style="text-align:center;margin-bottom:14px"><span style="font-size:11px;padding:3px 10px;border-radius:8px;background:rgba(251,191,36,.15);color:#fbbf24;font-weight:700">${c.category}</span></div>`;
+  h+=`<div style="text-align:center;margin-bottom:16px"><span style="font-size:11px;padding:3px 10px;border-radius:8px;background:rgba(251,191,36,.15);color:#fbbf24;font-weight:700">${c.category}</span></div>`;
+
+  // 問題画面（タップ前）：シーン → 会話 → 日本語
+  h+=`<div class="chunk-situation">🎬 ${c.situation}</div>`;
+  // 会話の流れ
+  const dialogueHtml=c.dialogue.replace(/\n/g,'<br>').replace(/___/g,'<span style="color:#fbbf24;font-weight:700">______</span>');
+  h+=`<div class="chunk-dialogue">${dialogueHtml}</div>`;
+  // 日本語で言いたいこと
+  h+=`<div class="chunk-japanese">💭 ${c.japanese}</div>`;
 
   if(!isRevealed){
-    // ── 問題画面 ──
-    // 具体的なシーン
-    h+=`<div class="chunk-situation">🎬 ${c.situation}</div>`;
-    // 会話ダイアログ
-    const dialogLines=c.dialogue.split('\n');
-    h+='<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px 18px;margin-bottom:14px">';
-    dialogLines.forEach(line=>{
-      const isBlank=line.includes('___');
-      h+=`<div style="font-size:15px;line-height:1.8;${isBlank?'color:#fbbf24;font-weight:600':'color:#c4c4dd'}">${line.replace('___','＿＿＿')}</div>`;
-    });
-    h+='</div>';
-    // 日本語で言いたいこと
-    h+=`<div style="background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);border-radius:12px;padding:12px 16px;margin-bottom:28px;font-size:14px;color:#a5b4fc;text-align:center">💭 ${c.japanese}</div>`;
-    // 表示ボタン
-    h+='<div style="text-align:center">';
-    h+='<p style="color:#555;font-size:13px;margin-bottom:16px">まず自分で考えてみて</p>';
-    h+=`<button onclick="revealChunk()" style="padding:16px 48px;font-size:16px;font-weight:700;border:none;border-radius:16px;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#000;cursor:pointer;box-shadow:0 8px 24px rgba(251,191,36,.4)">答えを見る 👁</button>`;
+    h+='<div style="text-align:center;padding:20px 20px">';
+    h+='<p style="color:#6666aa;font-size:13px;margin-bottom:20px">頭の中で英語にしてみて…</p>';
+    h+=`<button onclick="revealChunk()" style="padding:16px 40px;font-size:16px;font-weight:700;border:none;border-radius:16px;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#000;cursor:pointer;box-shadow:0 8px 24px rgba(251,191,36,.4)">答えを見る 👁</button>`;
     h+='</div>';
   }else{
     // ── 答え画面 ──
-    // チャンクを大きく表示
+    // チャンク大きく表示
     h+='<div class="chunk-card">';
     h+=`<div class="chunk-phrase">${c.phrase}</div>`;
+    h+=`<div class="chunk-example">"${c.example}"</div>`;
+    h+=`<div class="chunk-example-ja">${c.exampleJa}</div>`;
     h+='</div>';
-    // リピートボタン（最上部に大きく）
-    h+=`<button class="repeat-btn" onclick="repeatChunk()" style="margin-bottom:6px">`;
-    h+=`<span style="font-size:22px">🔊</span>`;
-    h+=`<span style="flex:1;text-align:left">声に出す</span>`;
-    h+=`<span style="font-size:13px;background:rgba(251,191,36,.2);padding:2px 10px;border-radius:20px;color:#fbbf24;font-weight:800;min-width:32px;text-align:center" id="repeat-count">${chunkState.repeatCount}</span>`;
-    h+='</button>';
-    h+='<p style="text-align:center;font-size:11px;color:#555;margin-bottom:20px">何回でも。体に染み込むまで。</p>';
 
-    // 詳細解説
-    h+='<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">';
-
-    // 📖 ニュアンス
-    h+='<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 16px">';
-    h+='<div style="font-size:12px;color:#8888aa;font-weight:700;margin-bottom:6px">📖 ニュアンス</div>';
-    h+=`<div style="font-size:14px;color:#c4c4dd;line-height:1.7">${c.nuance}</div>`;
+    // 📖 ニュアンス解説
+    h+='<div class="chunk-detail">';
+    h+='<div class="chunk-detail-title">📖 ニュアンス</div>';
+    h+=c.nuance;
     h+='</div>';
 
     // ⚠️ 使い方の注意
-    h+='<div style="background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.15);border-radius:14px;padding:14px 16px">';
-    h+='<div style="font-size:12px;color:#fbbf24;font-weight:700;margin-bottom:6px">⚠️ 注意</div>';
-    h+=`<div style="font-size:14px;color:#c4c4dd;line-height:1.7">${c.caution}</div>`;
+    h+='<div class="chunk-detail">';
+    h+='<div class="chunk-detail-title">⚠️ 使い方の注意</div>';
+    h+=c.caution;
     h+='</div>';
 
     // 🔀 似たフレーズとの違い
-    h+='<div style="background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.15);border-radius:14px;padding:14px 16px">';
-    h+='<div style="font-size:12px;color:#a78bfa;font-weight:700;margin-bottom:8px">🔀 似たフレーズとの違い</div>';
-    const similarLines=c.similar.split('\n');
-    similarLines.forEach(line=>{
-      const parts=line.split('→');
-      if(parts.length===2){
-        h+=`<div style="font-size:13px;line-height:1.8"><span style="color:#a5b4fc;font-weight:600">${parts[0].trim()}</span><span style="color:#666">→</span><span style="color:#c4c4dd"> ${parts[1].trim()}</span></div>`;
-      }else{
-        h+=`<div style="font-size:13px;color:#c4c4dd;line-height:1.8">${line}</div>`;
-      }
-    });
+    h+='<div class="chunk-detail">';
+    h+='<div class="chunk-detail-title">🔀 似たフレーズとの違い</div>';
+    h+=`<div style="white-space:pre-line;font-size:13px;line-height:1.8">${c.similar}</div>`;
     h+='</div>';
 
-    // 💬 例文
-    h+='<div style="background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.15);border-radius:14px;padding:14px 16px">';
-    h+='<div style="font-size:12px;color:#34d399;font-weight:700;margin-bottom:8px">💬 例文</div>';
-    const exLines=c.example.split('\n');
-    const exJaLines=c.exampleJa.split('\n');
-    exLines.forEach((line,i)=>{
-      const we=line.replace(/'/g,"\\'");
-      h+=`<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px">`;
-      h+=`<div style="font-size:14px;color:#c4c4dd;line-height:1.6;flex:1">${line}</div>`;
-      h+=`<span class="sb" onclick="speak('${we}',.8)" style="font-size:16px;flex-shrink:0">🔊</span>`;
-      h+='</div>';
-      if(exJaLines[i])h+=`<div style="font-size:12px;color:#8888aa;margin-bottom:8px">${exJaLines[i]}</div>`;
-    });
-    h+='</div>';
+    // リピートボタン
+    h+=`<button class="repeat-btn" onclick="repeatChunk()" style="margin-top:16px">`;
+    h+=`<span style="font-size:22px">🔊</span>`;
+    h+=`<span>もう一度聴く＆声に出す</span>`;
+    h+=`<span style="font-size:12px;color:#a37b2c;min-width:24px" id="repeat-count">${chunkState.repeatCount}</span>`;
+    h+='</button>';
+    h+='<p style="text-align:center;font-size:12px;color:#555;margin:10px 0 20px">口に出すたびに体に染み込む。何回でも。</p>';
 
-    h+='</div>';
-
-    // 次へボタン
+    // 次へ
     const isLast=chunkState.ci+1>=total;
-    h+=`<button onclick="nextChunk()" style="width:100%;padding:14px;font-size:15px;font-weight:700;border:none;border-radius:14px;cursor:pointer;color:#000;background:linear-gradient(135deg,#fbbf24,#f59e0b);box-shadow:0 4px 20px rgba(251,191,36,.35)">${isLast?'今日の練習を完了 🏁':'次のチャンクへ →'}</button>`;
+    h+=`<button onclick="nextChunk()" style="width:100%;padding:14px;font-size:15px;font-weight:700;border:none;border-radius:14px;cursor:pointer;color:#000;background:linear-gradient(135deg,#fbbf24,#f59e0b);box-shadow:0 4px 20px rgba(251,191,36,.35);margin-top:4px">${isLast?'今日の練習を完了 🏁':'次のチャンクへ →'}</button>`;
   }
   h+='</div></div>';
   app.innerHTML=h;
@@ -1263,7 +1229,6 @@ async function renderStart(app){
   app.innerHTML=h;
 }
 
-// ── ★ここが今回の改修ポイント：renderQuiz ──
 function renderQuiz(app){
   const q=state.questions[state.qi];
   const lvl=state.level?LEVELS[state.level]:null;
@@ -1287,7 +1252,6 @@ function renderQuiz(app){
 
   const isListening=state.quizMode==='listening';
   if(isListening){
-    // リスニングモード：音声ボタンを表示
     const we=q.word.replace(/'/g,"\\'");
     h+='<div style="display:flex;gap:12px;margin-bottom:24px;align-items:flex-start">';
     h+=`<div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,${ac},${ac}88);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">👂</div>`;
@@ -1295,8 +1259,6 @@ function renderQuiz(app){
     h+='<p style="margin:0 0 12px;font-size:13px;color:#8888bb">聴こえた単語の意味は？</p>';
     h+=`<button onclick="speak('${we}',.75)" style="padding:12px 24px;font-size:20px;border:2px solid rgba(99,102,241,.3);border-radius:14px;background:rgba(99,102,241,.1);cursor:pointer;transition:all .2s;color:#a78bfa;font-weight:700">🔊 もう一度聴く</button>`;
     h+='</div></div>';
-
-    // ★ 回答後にスペル（英単語）を表示する
     if(ans!==null){
       h+=`<div class="spelling-reveal">`;
       h+=`<div class="spelling-word">${q.word}</div>`;
@@ -1304,7 +1266,6 @@ function renderQuiz(app){
       h+=`</div>`;
     }
   }else{
-    // 通常モード：日本語の意味を表示
     h+='<div style="display:flex;gap:12px;margin-bottom:24px;align-items:flex-start">';
     h+=`<div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,${ac},${ac}88);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🎓</div>`;
     h+='<div style="background:rgba(255,255,255,.06);border-radius:4px 18px 18px 18px;padding:14px 18px;flex:1;border:1px solid rgba(255,255,255,.06)">';
@@ -1312,7 +1273,6 @@ function renderQuiz(app){
     h+=`<p style="margin:0;font-size:24px;font-weight:800;line-height:1.3">${q.meaning}</p></div></div>`;
   }
 
-  // 選択肢
   h+='<div style="display:flex;flex-direction:column;gap:10px">';
   q.options.forEach((opt,i)=>{
     const isThis=ans===i,isAns=i===q.correctIndex;
@@ -1322,7 +1282,6 @@ function renderQuiz(app){
     const circBg=ans!==null&&isAns?'rgba(52,211,153,.3)':ans!==null&&isThis?'rgba(248,113,113,.3)':'rgba(255,255,255,.06)';
     const circCol=ans!==null&&isAns?'#34d399':ans!==null&&isThis?'#f87171':'#8888aa';
     const label=ans!==null?(isAns?'✓':isThis?'✗':String.fromCharCode(65+i)):String.fromCharCode(65+i);
-    // リスニングモードは日本語の意味を選択肢に表示、通常モードは英単語
     const optLabel=isListening?opt.meaning:opt.word;
     h+=`<button class="ob ${ans!==null?'ad':''}" onclick="handleSelect(${i})" style="background:${bg};border-color:${bd};${am}">`;
     h+=`<span style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;background:${circBg};color:${circCol}">${label}</span>`;
@@ -1332,7 +1291,6 @@ function renderQuiz(app){
   });
   h+='</div>';
 
-  // 回答後フィードバック
   if(ans!==null){
     h+='<div style="animation:pop .3s ease;margin-top:18px">';
     h+='<div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:14px">';
