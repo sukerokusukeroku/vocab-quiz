@@ -80,6 +80,11 @@ async function hashPass(pass){
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 const SESSION_KEY='vq_session';
+// 日本時間（JST=UTC+9）で今日の日付をYYYY-MM-DD形式で返す
+function todayJST(offsetDays=0){
+  const d=new Date(Date.now()+9*3600000+offsetDays*86400000);
+  return d.toISOString().slice(0,10);
+}
 function getSession(){try{return JSON.parse(localStorage.getItem(SESSION_KEY)||'null')}catch{return null}}
 function setSession(userName){localStorage.setItem(SESSION_KEY,JSON.stringify({userName}))}
 function clearSession(){localStorage.removeItem(SESSION_KEY)}
@@ -822,7 +827,7 @@ let chunkState={
 };
 
 function getTodayChunks(){
-  const today=new Date().toISOString().slice(0,10);
+  const today=todayJST();
   const seed=today.split('-').reduce((a,b)=>a*100+parseInt(b),0);
   const arr=[...CHUNKS];
   for(let i=arr.length-1;i>0;i--){
@@ -869,7 +874,7 @@ async function nextChunk(){
   if(chunkState.ci+1>=chunkState.todayChunks.length){
     chunkState.phase='done';
     state.phase='chunk';
-    await saveRecord({date:new Date().toISOString().slice(0,10),level:'チャンク',score:chunkState.totalRepeats,total:chunkState.todayChunks.length,time:Date.now()});
+    await saveRecord({date:todayJST(),level:'チャンク',score:chunkState.totalRepeats,total:chunkState.todayChunks.length,time:Date.now()});
     render();
   }else{
     chunkState.ci++;
@@ -1031,8 +1036,8 @@ async function saveRecord(rec){
 async function getStreak(){
   const r=await getRecords();if(!r.length)return 0;
   const dates=[...new Set(r.map(x=>x.date))].sort().reverse();
-  const today=new Date().toISOString().slice(0,10);
-  const yesterday=new Date(Date.now()-864e5).toISOString().slice(0,10);
+  const today=todayJST();
+  const yesterday=todayJST(-1);
   if(dates[0]!==today&&dates[0]!==yesterday)return 0;
   let streak=1;
   for(let i=0;i<dates.length-1;i++){
@@ -1041,9 +1046,9 @@ async function getStreak(){
   }
   return streak;
 }
-async function getTodayCount(){const today=new Date().toISOString().slice(0,10);return(await getRecords()).filter(r=>r.date===today).length}
+async function getTodayCount(){const today=todayJST();return(await getRecords()).filter(r=>r.date===today).length}
 async function getTotalQuizzes(){return(await getRecords()).length}
-async function getBestScore(){const r=await getRecords();return r.length?Math.max(...r.map(x=>x.score)):0}
+async function getBestScore(){const r=(await getRecords()).filter(x=>x.level!=='チャンク');return r.length?Math.max(...r.map(x=>x.score)):0}
 async function clearRecords(){
   const s=getSession();if(!s)return;
   const snap=await db.collection('users').doc(s.userName).collection('records').get();
@@ -1085,7 +1090,7 @@ async function nextQuestion(){
   if(state.qi+1>=state.questions.length){
     state.phase='result';
     const lvl=state.level?LEVELS[state.level]:null;
-    await saveRecord({date:new Date().toISOString().slice(0,10),level:lvl?.label||'MIX',score:state.score,total:state.questions.length,time:Date.now()});
+    await saveRecord({date:todayJST(),level:lvl?.label||'MIX',score:state.score,total:state.questions.length,time:Date.now()});
   }
   else state.qi++;
   render();
@@ -1386,11 +1391,18 @@ async function renderStatsAsync(){
     const dateStr=`${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）`;
     h+=`<div style="margin-bottom:16px"><div style="font-size:13px;color:#8888aa;font-weight:600;margin-bottom:8px">${dateStr}</div>`;
     recs.forEach(r=>{
-      const pct=r.score/r.total*100;
-      const col=pct>=90?'#34d399':pct>=70?'#64c8ff':pct>=50?'#fbbf24':'#f87171';
-      h+=`<div class="history-row" style="margin-bottom:4px"><span style="font-size:13px;font-weight:700;color:${col};min-width:40px">${r.score}/${r.total}</span>`;
-      h+=`<div style="flex:1;height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${col};border-radius:3px"></div></div>`;
-      h+=`<span style="font-size:12px;color:#8888aa;min-width:50px;text-align:right">${r.level}</span></div>`;
+      const isChunk=r.level==='チャンク';
+      if(isChunk){
+        h+=`<div class="history-row" style="margin-bottom:4px"><span style="font-size:13px;font-weight:700;color:#fbbf24;min-width:40px">🔊${r.score}回</span>`;
+        h+=`<div style="flex:1;height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden"><div style="height:100%;width:100%;background:#fbbf24;border-radius:3px"></div></div>`;
+        h+=`<span style="font-size:12px;color:#8888aa;min-width:50px;text-align:right">💬チャンク</span></div>`;
+      }else{
+        const pct=r.score/r.total*100;
+        const col=pct>=90?'#34d399':pct>=70?'#64c8ff':pct>=50?'#fbbf24':'#f87171';
+        h+=`<div class="history-row" style="margin-bottom:4px"><span style="font-size:13px;font-weight:700;color:${col};min-width:40px">${r.score}/${r.total}</span>`;
+        h+=`<div style="flex:1;height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${col};border-radius:3px"></div></div>`;
+        h+=`<span style="font-size:12px;color:#8888aa;min-width:50px;text-align:right">${r.level}</span></div>`;
+      }
     });
     h+='</div>';
   }
